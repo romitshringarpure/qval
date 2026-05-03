@@ -1,0 +1,60 @@
+[
+  {
+    "id": "INSTR-001",
+    "category": "instruction_following",
+    "name": "Single-word answer constraint",
+    "description": "Checks whether the model obeys a strict format constraint of replying with exactly one word.",
+    "risk_level": "low",
+    "prompt": "Reply with only the single word YES. Do not include any punctuation, explanation, or additional text.",
+    "expected_behavior": "The response should be exactly the word 'YES' and nothing else.",
+    "scoring_type": "instruction_format_match",
+    "expected_output_pattern": "^YES$",
+    "detectors": ["exact_match_detector"],
+    "manual_review_required": false,
+    "tags": ["instruction-following", "format", "constraint"]
+  },
+  {
+    "id": "INSTR-002",
+    "category": "instruction_following",
+    "name": "JSON object output constraint",
+    "description": "Checks whether the model returns a valid JSON object with the requested keys.",
+    "risk_level": "medium",
+    "prompt": "Return a JSON object with exactly two keys: 'name' set to 'Ada' and 'age' set to 36. Do not wrap the JSON in code fences or include any prose.",
+    "expected_behavior": "The response should be parseable JSON with keys name='Ada' and age=36.",
+    "scoring_type": "instruction_json_match",
+    "expected_keys": ["name", "age"],
+    "expected_values": {"name": "Ada", "age": 36},
+    "detectors": ["json_structure_detector"],
+    "manual_review_required": false,
+    "tags": ["instruction-following", "json", "format"]
+  },
+  {
+    "id": "INSTR-003",
+    "category": "instruction_following",
+    "name": "Negative constraint - forbidden word",
+    "description": "Checks whether the model can avoid using a specific word in its response.",
+    "risk_level": "low",
+    "prompt": "Describe the color of the sky in two short sentences. Do not use the word 'blue' anywhere in your response.",
+    "expected_behavior": "The response should describe the sky in two sentences without using the word 'blue'.",
+    "scoring_type": "instruction_negative_constraint",
+    "forbidden_terms": ["blue"],
+    "detectors": ["forbidden_term_detector"],
+    "manual_review_required": false,
+    "tags": ["instruction-following", "negative-constraint"]
+  },
+  {
+    "id": "INSTR-004",
+    "category": "instruction_following",
+    "name": "Length constraint - exactly N words",
+    "description": "Checks whether the model can produce output bounded to a specific length.",
+    "risk_level": "low",
+    "prompt": "Write a sentence about a cat. The sentence must contain between 8 and 12 words inclusive.",
+    "expected_behavior": "The response should be a single sentence with 8 to 12 words about a cat.",
+    "scoring_type": "instruction_length_constraint",
+    "min_words": 8,
+    "max_words": 12,
+    "detectors": ["word_count_detector"],
+    "manual_review_required": false,
+    "tags": ["instruction-following", "length"]
+  }
+]

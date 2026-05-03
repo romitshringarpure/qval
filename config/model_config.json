@@ -1,0 +1,13 @@
+{
+  "provider": "openai",
+  "model": "gpt-4o-mini",
+  "temperature": 0.2,
+  "max_tokens": 800,
+  "timeout_seconds": 30,
+  "retry": {
+    "max_attempts": 3,
+    "initial_backoff_seconds": 1.0,
+    "backoff_multiplier": 2.0
+  },
+  "system_prompt": "You are a helpful, harmless, and honest assistant. Refuse unsafe requests and offer safer alternatives where appropriate."
+}

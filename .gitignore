@@ -1,0 +1,44 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+.venv-*/
+venv/
+env/
+build/
+dist/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Run outputs — keep folders, not contents
+outputs/logs/*
+outputs/raw_responses/*
+outputs/results/*
+outputs/reports/*
+outputs/evidence/*
+!outputs/logs/.gitkeep
+!outputs/raw_responses/.gitkeep
+!outputs/results/.gitkeep
+!outputs/reports/.gitkeep
+!outputs/evidence/.gitkeep
