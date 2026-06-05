@@ -15,8 +15,8 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from src.engine.schemas import TestCase  # noqa: E402
-from src.scorers.base_scorer import (  # noqa: E402
+from qval.engine.schemas import TestCase  # noqa: E402
+from qval.scorers.base_scorer import (  # noqa: E402
     refusal_detector, safe_alternative_detector,
     crisis_resource_detector, uncertainty_acknowledgement_detector,
     unsafe_instruction_detector, fake_citation_detector,

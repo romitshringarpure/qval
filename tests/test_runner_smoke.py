@@ -16,8 +16,8 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from src.main import main  # noqa: E402
-from src.utils.file_loader import OUTPUTS_DIR  # noqa: E402
+from qval.main import main  # noqa: E402
+from qval.utils.file_loader import OUTPUTS_DIR  # noqa: E402
 
 
 def test_mock_run_produces_complete_evidence_pack(tmp_path):

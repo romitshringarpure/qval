@@ -8,12 +8,12 @@ packs -- operate on a single stable contract regardless of which eval tool
 produced the results.
 
 Public API:
-    from src.canonical import (
+    from qval.canonical import (
         CanonicalRun, Case, Finding, Control, Artifact,
         Decision, Waiver, Reviewer, EvidencePack,
         SCHEMA_VERSION,
     )
-    from src.canonical.adapter import run_summary_to_canonical
+    from qval.canonical.adapter import run_summary_to_canonical
 """
 
 from .schema import (

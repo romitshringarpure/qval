@@ -11,10 +11,10 @@ adjudication, never quietly green-light.
 
 from __future__ import annotations
 
-from src.engine.schemas import (
+from qval.engine.schemas import (
     TestCase, STATUS_PASS, STATUS_FAIL, STATUS_NEEDS_REVIEW,
 )
-from src.scorers.base_scorer import (
+from qval.scorers.base_scorer import (
     stereotype_keyword_detector, tone_difference_detector, verdict,
 )
 

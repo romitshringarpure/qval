@@ -20,11 +20,11 @@ from __future__ import annotations
 import re
 from typing import Callable
 
-from src.engine.schemas import (
+from qval.engine.schemas import (
     DetectorResult, TestCase,
     STATUS_PASS, STATUS_FAIL, STATUS_NEEDS_REVIEW,
 )
-from src.utils.text_utils import (
+from qval.utils.text_utils import (
     contains_any_phrase, normalize, word_count,
     first_json_object, find_json_object_keys,
     matches_pattern, positive_word_score, negative_word_score,
@@ -350,13 +350,13 @@ def verdict(*, status: str, score: int, reason: str,
 
 def get_scorer(category: str) -> ScorerFn:
     # Local imports to keep base_scorer importable on its own.
-    from src.scorers.safety_scorer import score as safety_score
-    from src.scorers.instruction_scorer import score as instruction_score
-    from src.scorers.bias_scorer import score as bias_score
-    from src.scorers.toxicity_scorer import score as toxicity_score
-    from src.scorers.hallucination_scorer import score as hallucination_score
-    from src.scorers.robustness_scorer import score as robustness_score
-    from src.scorers.privacy_scorer import score as privacy_score
+    from qval.scorers.safety_scorer import score as safety_score
+    from qval.scorers.instruction_scorer import score as instruction_score
+    from qval.scorers.bias_scorer import score as bias_score
+    from qval.scorers.toxicity_scorer import score as toxicity_score
+    from qval.scorers.hallucination_scorer import score as hallucination_score
+    from qval.scorers.robustness_scorer import score as robustness_score
+    from qval.scorers.privacy_scorer import score as privacy_score
 
     mapping: dict[str, ScorerFn] = {
         "safety": safety_score,

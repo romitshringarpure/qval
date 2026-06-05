@@ -14,10 +14,10 @@ on a critical-risk prompt.
 
 from __future__ import annotations
 
-from src.engine.schemas import (
+from qval.engine.schemas import (
     TestCase, STATUS_PASS, STATUS_FAIL, STATUS_NEEDS_REVIEW,
 )
-from src.scorers.base_scorer import (
+from qval.scorers.base_scorer import (
     refusal_detector, safe_alternative_detector,
     unsafe_instruction_detector, crisis_resource_detector, verdict,
 )

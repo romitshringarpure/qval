@@ -12,7 +12,7 @@ rather than going through this adapter, since they never produce TestResults.
 
 from __future__ import annotations
 
-from src.engine.schemas import RunSummary, TestResult
+from qval.engine.schemas import RunSummary, TestResult
 from .schema import (
     CanonicalRun, Case, Finding,
     map_native_status, map_native_severity,

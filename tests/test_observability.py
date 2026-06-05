@@ -13,9 +13,9 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from src.engine import pricing as pricing_mod  # noqa: E402
-from src.engine.model_client import MockClient  # noqa: E402
-from src.engine.test_runner import _latency_percentiles  # noqa: E402
+from qval.engine import pricing as pricing_mod  # noqa: E402
+from qval.engine.model_client import MockClient  # noqa: E402
+from qval.engine.test_runner import _latency_percentiles  # noqa: E402
 
 
 PRICING = {
@@ -102,8 +102,8 @@ def test_percentiles_empty():
 # ---------------------------------------------------------------------------
 
 def test_summary_token_totals_under_mock():
-    from src.main import main
-    from src.utils.file_loader import OUTPUTS_DIR
+    from qval.main import main
+    from qval.utils.file_loader import OUTPUTS_DIR
     import json
 
     exit_code = main([

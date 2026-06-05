@@ -26,18 +26,18 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from src.engine.model_client import ModelClient, OpenAIClient, MockClient
-from src.engine.pricing import load_pricing
-from src.engine.response_logger import ResponseLogger
-from src.engine.schemas import TestCase
-from src.engine.test_runner import TestRunner
-from src.reports.report_generator import generate_reports
-from src.scorers.base_scorer import get_scorer
-from src.utils.file_loader import (
+from qval.engine.model_client import ModelClient, OpenAIClient, MockClient
+from qval.engine.pricing import load_pricing
+from qval.engine.response_logger import ResponseLogger
+from qval.engine.schemas import TestCase
+from qval.engine.test_runner import TestRunner
+from qval.reports.report_generator import generate_reports
+from qval.scorers.base_scorer import get_scorer
+from qval.utils.file_loader import (
     load_model_config, load_scoring_config, load_risk_matrix,
     load_test_suite, load_all_suites, ALL_SUITES, OUTPUTS_DIR,
 )
-from src.utils.time_utils import generate_run_id, now_utc_iso
+from qval.utils.time_utils import generate_run_id, now_utc_iso
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
