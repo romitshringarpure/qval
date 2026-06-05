@@ -31,6 +31,20 @@ htmlcov/
 .DS_Store
 Thumbs.db
 
+# Local scratch / plans (never commit)
+plans/
+.claude/
+*.plan.md
+features.html
+docs/superpowers/
+
+# Internal strategy docs (never commit)
+POSTMORTEM.md
+docs/FEATURES.md
+docs/BACKLOG.md
+docs/TECH_DEBT.md
+linkedin/
+
 # Run outputs — keep folders, not contents
 outputs/logs/*
 outputs/raw_responses/*
