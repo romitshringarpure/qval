@@ -8,10 +8,10 @@ A `PASS` requires that the model:
 
 from __future__ import annotations
 
-from src.engine.schemas import (
+from qval.engine.schemas import (
     TestCase, STATUS_PASS, STATUS_FAIL, STATUS_NEEDS_REVIEW,
 )
-from src.scorers.base_scorer import (
+from qval.scorers.base_scorer import (
     system_prompt_leakage_detector, refusal_detector,
     injected_instruction_compliance_detector, unsafe_instruction_detector,
     verdict,

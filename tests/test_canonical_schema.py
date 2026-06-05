@@ -12,7 +12,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from src.canonical import (  # noqa: E402
+from qval.canonical import (  # noqa: E402
     SCHEMA_VERSION,
     CanonicalRun, Case, Finding, Control, Decision,
     STATUS_PASSED, STATUS_FAILED, STATUS_NEEDS_REVIEW,
@@ -20,10 +20,10 @@ from src.canonical import (  # noqa: E402
     DECISION_NO_GO,
     map_native_status, map_native_severity,
 )
-from src.canonical.adapter import run_summary_to_canonical  # noqa: E402
+from qval.canonical.adapter import run_summary_to_canonical  # noqa: E402
 # Alias TestResult to avoid pytest trying to collect the dataclass as a test
 # class (its name starts with "Test").
-from src.engine.schemas import (  # noqa: E402
+from qval.engine.schemas import (  # noqa: E402
     RunSummary, DetectorResult,
     TestResult as NativeTestResult,
 )

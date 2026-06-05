@@ -10,8 +10,8 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Iterable
 
-from src.engine.schemas import TestResult, RunSummary, STATUS_NEEDS_REVIEW
-from src.utils.file_loader import OUTPUTS_DIR, write_csv, write_json, write_text
+from qval.engine.schemas import TestResult, RunSummary, STATUS_NEEDS_REVIEW
+from qval.utils.file_loader import OUTPUTS_DIR, write_csv, write_json, write_text
 
 
 MANUAL_REVIEW_FIELDS = [

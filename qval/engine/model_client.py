@@ -19,9 +19,9 @@ import random
 import time
 from typing import Protocol
 
-from src.engine.schemas import ModelResponse
-from src.engine.pricing import compute_cost
-from src.utils.time_utils import monotonic_ms, elapsed_ms
+from qval.engine.schemas import ModelResponse
+from qval.engine.pricing import compute_cost
+from qval.utils.time_utils import monotonic_ms, elapsed_ms
 
 
 class ModelClient(Protocol):

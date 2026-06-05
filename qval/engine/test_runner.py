@@ -16,12 +16,12 @@ from __future__ import annotations
 import statistics
 from typing import Callable, Optional
 
-from src.engine.model_client import ModelClient
-from src.engine.schemas import (
+from qval.engine.model_client import ModelClient
+from qval.engine.schemas import (
     TestCase, TestResult, RunSummary,
     STATUS_PASS, STATUS_FAIL, STATUS_NEEDS_REVIEW,
 )
-from src.utils.time_utils import now_utc_iso
+from qval.utils.time_utils import now_utc_iso
 
 
 # A scorer is a callable: (test_case, response_text, paired_response_text|None) -> dict

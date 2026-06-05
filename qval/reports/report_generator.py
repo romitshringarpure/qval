@@ -15,13 +15,13 @@ from __future__ import annotations
 import html
 from pathlib import Path
 
-from src.engine.schemas import (
+from qval.engine.schemas import (
     RunSummary, TestResult,
     STATUS_PASS, STATUS_FAIL, STATUS_NEEDS_REVIEW,
 )
-from src.reports.html_template import HTML_SHELL
-from src.utils.text_utils import truncate
-from src.utils.file_loader import OUTPUTS_DIR, write_text
+from qval.reports.html_template import HTML_SHELL
+from qval.utils.text_utils import truncate
+from qval.utils.file_loader import OUTPUTS_DIR, write_text
 
 
 # ---------------------------------------------------------------------------

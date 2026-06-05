@@ -16,14 +16,14 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from src.main import main  # noqa: E402
-from src.utils.file_loader import OUTPUTS_DIR  # noqa: E402
+from qval.main import main  # noqa: E402
+from qval.utils.file_loader import OUTPUTS_DIR  # noqa: E402
 
 
 def test_mock_run_produces_complete_evidence_pack(tmp_path):
     # Run a small mock evaluation across all suites with a tight cap so the
     # smoke test stays fast.
-    exit_code = main(["--mock", "--suite", "all", "--limit", "3"])
+    exit_code = main(["run", "--mock", "--suite", "all", "--limit", "3"])
     # Mock is deterministic but does sometimes flip a "force_bad" output for
     # privacy prompts; either exit code 0 or 1 is acceptable here. We only
     # care that the pipeline did not crash.
@@ -49,5 +49,5 @@ def test_mock_run_produces_complete_evidence_pack(tmp_path):
 
 
 def test_mock_run_single_suite():
-    exit_code = main(["--mock", "--suite", "instruction_following", "--limit", "2"])
+    exit_code = main(["run", "--mock", "--suite", "instruction_following", "--limit", "2"])
     assert exit_code == 0

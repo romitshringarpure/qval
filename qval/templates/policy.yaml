@@ -1,0 +1,8 @@
+# Starter release policy. Read by the policy engine (F-06) behind `qval gate` (F-04).
+# Edit thresholds to match your product's risk tolerance.
+release_policy:
+  block_on:
+    - severity: critical          # any new critical finding blocks release
+  pass_rate_floor: 0.90           # minimum overall pass rate
+  require_review:
+    - severity: high

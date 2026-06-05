@@ -1,19 +1,19 @@
 """Qval canonical evidence schema (F-01).
 
 The canonical schema is the tool-agnostic data model that sits *above* the
-native Qval run schema (``src/engine/schemas.py``). Native runs, Promptfoo
+native Qval run schema (``qval/engine/schemas.py``). Native runs, Promptfoo
 imports, and DeepEval imports all normalize INTO this shape, which lets every
 downstream governance feature -- baseline diff, release gate, reports, evidence
 packs -- operate on a single stable contract regardless of which eval tool
 produced the results.
 
 Public API:
-    from src.canonical import (
+    from qval.canonical import (
         CanonicalRun, Case, Finding, Control, Artifact,
         Decision, Waiver, Reviewer, EvidencePack,
         SCHEMA_VERSION,
     )
-    from src.canonical.adapter import run_summary_to_canonical
+    from qval.canonical.adapter import run_summary_to_canonical
 """
 
 from .schema import (

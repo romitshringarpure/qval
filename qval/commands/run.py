@@ -1,77 +1,65 @@
-"""CLI entry point for the AI Quality Evaluation Framework.
+"""`qval run` — execute a QA-style evaluation suite against an LLM.
 
-Usage examples:
-
-    python src/main.py --suite all
-    python src/main.py --suite safety
-    python src/main.py --suite bias --model gpt-4o-mini
-    python src/main.py --suite all --mock
-    python src/main.py --suite hallucination --limit 2
-
-The script wires together the four building blocks of the framework:
-  - file loader (configs and test cases),
-  - model client (OpenAI or mock),
-  - test runner (executes a suite, scores each test),
-  - report generator + response logger (writes evidence pack and reports).
+This is the native eval pipeline relocated from qval/main.py. Behavior is
+unchanged (relocate only): it wires together the file loader, model client,
+test runner, and report generator + response logger.
 """
 
 from __future__ import annotations
 
 import argparse
-import sys
 from pathlib import Path
 
-# Allow running as `python src/main.py` from the project root.
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-if str(PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(PROJECT_ROOT))
-
-from src.engine.model_client import ModelClient, OpenAIClient, MockClient
-from src.engine.pricing import load_pricing
-from src.engine.response_logger import ResponseLogger
-from src.engine.schemas import TestCase
-from src.engine.test_runner import TestRunner
-from src.reports.report_generator import generate_reports
-from src.scorers.base_scorer import get_scorer
-from src.utils.file_loader import (
+from qval.engine.model_client import ModelClient, OpenAIClient, MockClient
+from qval.engine.pricing import load_pricing
+from qval.engine.response_logger import ResponseLogger
+from qval.engine.schemas import TestCase
+from qval.engine.test_runner import TestRunner
+from qval.reports.report_generator import generate_reports
+from qval.scorers.base_scorer import get_scorer
+from qval.utils.file_loader import (
     load_model_config, load_scoring_config, load_risk_matrix,
     load_test_suite, load_all_suites, ALL_SUITES, OUTPUTS_DIR,
 )
-from src.utils.time_utils import generate_run_id, now_utc_iso
+from qval.utils.time_utils import generate_run_id, now_utc_iso
+
+# run.py lives at qval/commands/run.py, so parents[2] is the project root.
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
 
-def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
-        prog="ai-quality-eval",
+def add_parser(subparsers) -> None:
+    sub = subparsers.add_parser(
+        "run",
+        help="Run a QA-style evaluation suite against an LLM.",
         description="Run a QA-style evaluation suite against an LLM.",
     )
-    parser.add_argument(
+    sub.add_argument(
         "--suite", default="all",
         choices=["all", *ALL_SUITES],
         help="Which test suite to run. Default: all.",
     )
-    parser.add_argument(
+    sub.add_argument(
         "--model", default=None,
         help="Override the model defined in config/model_config.json.",
     )
-    parser.add_argument(
+    sub.add_argument(
         "--mock", action="store_true",
         help="Use the offline mock provider. No API key required.",
     )
-    parser.add_argument(
+    sub.add_argument(
         "--limit", type=int, default=None,
         help="Only run the first N test cases of the selected suite.",
     )
-    parser.add_argument(
+    sub.add_argument(
         "--per-suite-limit", type=int, default=None,
         help="When --suite all, run the first N cases from each category "
              "(single run, single combined report).",
     )
-    parser.add_argument(
+    sub.add_argument(
         "--seed", type=int, default=42,
         help="Seed for the mock provider (also used for run order stability).",
     )
-    return parser.parse_args(argv)
+    sub.set_defaults(func=run)
 
 
 def build_client(config: dict, *, mock: bool, model_override: str | None,
@@ -123,9 +111,7 @@ def load_cases(suite: str, limit: int | None,
     return cases, suite_label
 
 
-def main(argv: list[str] | None = None) -> int:
-    args = parse_args(argv)
-
+def run(args: argparse.Namespace) -> int:
     # Load configs
     model_config = load_model_config()
     scoring_config = load_scoring_config()
@@ -195,7 +181,3 @@ def main(argv: list[str] | None = None) -> int:
 
     # Non-zero exit when there are critical failures — useful for CI gating.
     return 1 if summary.critical_failures else 0
-
-
-if __name__ == "__main__":
-    raise SystemExit(main())

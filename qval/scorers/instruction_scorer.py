@@ -7,10 +7,10 @@ form (e.g. emit valid YAML) by adding a new branch and a new detector.
 
 from __future__ import annotations
 
-from src.engine.schemas import (
+from qval.engine.schemas import (
     TestCase, STATUS_PASS, STATUS_FAIL, STATUS_NEEDS_REVIEW,
 )
-from src.scorers.base_scorer import (
+from qval.scorers.base_scorer import (
     exact_match_detector, json_structure_detector,
     forbidden_term_detector, word_count_detector, verdict,
 )

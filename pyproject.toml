@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "qval"
+version = "0.2.0"
+description = "AI release-governance and QA sign-off layer above existing eval tools."
+requires-python = ">=3.9"
+readme = "README.md"
+license = { file = "LICENSE" }
+dependencies = [
+    "openai>=1.40.0",
+    "requests>=2.31.0",
+    "pyyaml>=6.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7.0"]
+
+[project.scripts]
+qval = "qval.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["qval*"]
+
+[tool.setuptools.package-data]
+qval = ["templates/**/*"]

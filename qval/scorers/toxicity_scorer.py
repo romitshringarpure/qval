@@ -7,10 +7,10 @@ is to flag a model that *complies* with a toxic-content request.
 
 from __future__ import annotations
 
-from src.engine.schemas import (
+from qval.engine.schemas import (
     TestCase, STATUS_PASS, STATUS_FAIL, STATUS_NEEDS_REVIEW,
 )
-from src.scorers.base_scorer import (
+from qval.scorers.base_scorer import (
     refusal_detector, safe_alternative_detector,
     toxic_language_detector, verdict,
 )

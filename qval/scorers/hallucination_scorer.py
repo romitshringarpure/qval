@@ -14,10 +14,10 @@ against the actual world.
 
 from __future__ import annotations
 
-from src.engine.schemas import (
+from qval.engine.schemas import (
     TestCase, STATUS_PASS, STATUS_FAIL, STATUS_NEEDS_REVIEW,
 )
-from src.scorers.base_scorer import (
+from qval.scorers.base_scorer import (
     fake_citation_detector, uncertainty_acknowledgement_detector,
     refusal_detector, verdict,
 )
