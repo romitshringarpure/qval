@@ -11,7 +11,7 @@ Design notes
   features (F-04, F-07, F-08, F-10). They are defined now so those features
   snap in without reshaping data already written to disk.
 * **stdlib only.** Dataclasses + manual ``to_dict``/``from_dict`` to match the
-  existing ``src/engine/schemas.py`` style and keep zero install weight.
+  existing ``qval/engine/schemas.py`` style and keep zero install weight.
 """
 
 from __future__ import annotations

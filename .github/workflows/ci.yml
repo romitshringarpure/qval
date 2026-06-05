@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.10", "3.11", "3.12"]
+        python-version: ["3.9", "3.10", "3.11", "3.12"]
 
     steps:
       - uses: actions/checkout@v4
@@ -24,14 +24,16 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install pytest
+          pip install -e .[dev]
 
       - name: Run pytest
         run: pytest tests/ -v
 
+      - name: Validate environment + config
+        run: qval doctor || true
+
       - name: Run framework end-to-end against the mock provider
-        run: python src/main.py --suite all --mock --limit 2
+        run: qval run --suite all --mock --limit 2
 
       - name: Verify evidence pack was produced
         run: |

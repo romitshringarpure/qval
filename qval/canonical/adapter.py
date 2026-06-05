@@ -1,6 +1,6 @@
 """Native -> canonical adapter (F-01).
 
-Converts the existing native run schema (``src/engine/schemas.py``:
+Converts the existing native run schema (``qval/engine/schemas.py``:
 ``RunSummary`` + ``TestResult``) into a ``CanonicalRun``. This keeps the
 working native pipeline untouched: the runner still produces TestResults, and
 this adapter translates them into the governance-layer shape that the gate,

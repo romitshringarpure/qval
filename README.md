@@ -3,7 +3,7 @@
 > A QA-style evaluation framework for testing LLM safety, bias, hallucination, robustness, privacy, and instruction-following behavior.
 
 [![Tests](https://img.shields.io/badge/tests-pytest-green)](#testing)
-[![Python](https://img.shields.io/badge/python-3.10%2B-blue)](#installation)
+[![Python](https://img.shields.io/badge/python-3.9%2B-blue)](#install)
 [![License](https://img.shields.io/badge/license-MIT-lightgrey)](LICENSE)
 [![Status](https://img.shields.io/badge/status-MVP-yellow)](#roadmap)
 
@@ -39,7 +39,7 @@ It is not a replacement for the deeper ML-research evaluators. It sits next to t
 - Severity-weighted pass rate so a single `CRITICAL` failure cannot be hidden by 99 trivial passes.
 - Schema validation on test load — malformed test files fail loud.
 - Retry with exponential backoff for transient API errors.
-- CLI with `--suite`, `--model`, `--mock`, `--limit`, and `--seed` flags.
+- Installable `qval` CLI (`qval init` / `doctor` / `run`, with `gate` / `report` / `import` planned); `qval run` supports `--suite`, `--model`, `--mock`, `--limit`, and `--seed`.
 - Pytest suite for the detectors themselves — the framework tests its own testing logic.
 
 ## Architecture
@@ -47,7 +47,7 @@ It is not a replacement for the deeper ML-research evaluators. It sits next to t
 ```
                 ┌─────────────────────────────┐
                 │            CLI              │
-                │        (src/main.py)        │
+                │        (qval/cli.py)        │
                 └──────────────┬──────────────┘
                                │
         ┌──────────────────────┼──────────────────────┐
@@ -95,6 +95,7 @@ It is not a replacement for the deeper ML-research evaluators. It sits next to t
 ai-quality-evaluation-framework/
 ├── README.md
 ├── LICENSE
+├── pyproject.toml             # package metadata + `qval` console entry point
 ├── requirements.txt
 ├── .gitignore
 ├── .env.example
@@ -113,8 +114,14 @@ ai-quality-evaluation-framework/
 │   ├── robustness_tests.json
 │   └── privacy_tests.json
 │
-├── src/
-│   ├── main.py                # CLI entry point
+├── qval/
+│   ├── cli.py                 # `qval` CLI dispatcher (argparse subcommands)
+│   ├── __main__.py            # `python -m qval` entry point
+│   ├── config.py              # YAML/JSON config loader
+│   ├── main.py                # legacy shim → qval.cli
+│   ├── commands/              # init, doctor, run, and gate/report/import stubs
+│   ├── canonical/             # tool-agnostic evidence schema (F-01)
+│   ├── templates/             # files emitted by `qval init`
 │   ├── engine/
 │   │   ├── model_client.py    # provider abstraction (OpenAI, Mock, Anthropic stub)
 │   │   ├── test_runner.py     # iterates suites, calls model, calls scorer
@@ -160,17 +167,44 @@ ai-quality-evaluation-framework/
     └── comparison_with_existing_tools.md
 ```
 
-## Installation
+## Install
 
 ```bash
 git clone https://github.com/<your-handle>/ai-quality-evaluation-framework.git
 cd ai-quality-evaluation-framework
 python -m venv .venv
 source .venv/bin/activate          # Windows: .venv\Scripts\activate
-pip install -r requirements.txt
+pip install -e .                   # installs the `qval` console command
 ```
 
-Requires Python 3.10 or newer.
+Requires Python 3.9 or newer. Editable install puts a `qval` command on your PATH.
+
+## Quickstart
+
+Run from the cloned repo checkout — `qval run` reads the repo's `test_cases/` and
+`config/`, so a clone is runnable end-to-end with no API key via `--mock`:
+
+```bash
+qval init        # scaffold qval.yaml, policy.yaml, and suites/ (see note below)
+qval doctor      # validate environment + config (may print WARN; that's fine)
+qval run --mock  # run the native eval suite offline against the mock provider
+```
+
+> **Note:** `qval init` scaffolds a project layout, but `qval run` currently
+> resolves `test_cases/` and `config/` relative to the repo checkout. A freshly
+> `qval init`'d project in an arbitrary empty directory is scaffolded but not yet
+> runnable end-to-end; project-aware path resolution is a planned follow-up.
+
+## Commands
+
+| Command | Status |
+|---------|--------|
+| `qval init` | scaffold a project (qval.yaml, policy.yaml, suites/) |
+| `qval doctor` | validate environment + config |
+| `qval run` | run the native eval suite |
+| `qval gate` | release go/no-go (planned, F-04) |
+| `qval report` | HTML/MD report (planned, F-05) |
+| `qval import` | import Promptfoo/DeepEval (planned, F-03) |
 
 ## Configure your API key
 
@@ -188,7 +222,7 @@ If you do not have an API key, run with `--mock` to use the offline mock provide
 ## Run all suites
 
 ```bash
-python src/main.py --suite all
+qval run --suite all
 ```
 
 You will see something like:
@@ -210,9 +244,9 @@ Evidence:      outputs/evidence/run_20260427_213412_a3f9c1d2/
 ## Run one suite
 
 ```bash
-python src/main.py --suite safety
-python src/main.py --suite bias
-python src/main.py --suite hallucination
+qval run --suite safety
+qval run --suite bias
+qval run --suite hallucination
 ```
 
 Valid suite names: `all`, `instruction_following`, `bias`, `toxicity`, `hallucination`, `safety`, `robustness`, `privacy`.
@@ -220,13 +254,13 @@ Valid suite names: `all`, `instruction_following`, `bias`, `toxicity`, `hallucin
 ## Run with a specific model
 
 ```bash
-python src/main.py --suite all --model gpt-4o-mini
+qval run --suite all --model gpt-4o-mini
 ```
 
 ## Run offline (no API key required)
 
 ```bash
-python src/main.py --suite all --mock
+qval run --suite all --mock
 ```
 
 ## Add a new test case
@@ -278,7 +312,7 @@ This project does not compete with OpenAI Evals, DeepEval, Giskard, DeepTeam, ga
 The framework's own detectors are unit-tested with pytest:
 
 ```bash
-pip install pytest
+pip install -e .[dev]
 pytest tests/
 ```
 
