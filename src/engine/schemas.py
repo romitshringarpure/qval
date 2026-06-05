@@ -121,6 +121,10 @@ class ModelResponse:
     model: str
     provider: str
     error: str | None = None
+    prompt_tokens: int | None = None
+    completion_tokens: int | None = None
+    total_tokens: int | None = None
+    cost_usd: float | None = None
 
 
 @dataclass
@@ -159,6 +163,10 @@ class TestResult:
     manual_review_required: bool
     detector_results: list[DetectorResult]
     error: str | None = None
+    prompt_tokens: int | None = None
+    completion_tokens: int | None = None
+    total_tokens: int | None = None
+    cost_usd: float | None = None
 
     def to_dict(self) -> dict:
         out = asdict(self)
@@ -190,3 +198,11 @@ class RunSummary:
     high_risk_failures: list[str]
     report_path: str
     evidence_dir: str
+    total_prompt_tokens: int = 0
+    total_completion_tokens: int = 0
+    total_tokens: int = 0
+    total_cost_usd: float = 0.0
+    cost_complete: bool = True
+    p50_latency_ms: int = 0
+    p95_latency_ms: int = 0
+    p99_latency_ms: int = 0

@@ -184,7 +184,15 @@ def render_markdown(summary: RunSummary, results: list[TestResult],
     lines.append(f"| Pass rate | {summary.pass_rate:.1%} |")
     lines.append(f"| Severity-weighted pass rate | {summary.weighted_pass_rate:.1%} |")
     lines.append(f"| Average score | {summary.average_score:.2f} / 2.00 |")
+    lines.append(f"| Total tokens | {summary.total_tokens:,} |")
+    lines.append(f"| Total cost | {_format_total_cost(summary)} |")
+    lines.append(f"| Latency P50 / P95 / P99 | "
+                 f"{summary.p50_latency_ms} / {summary.p95_latency_ms} / "
+                 f"{summary.p99_latency_ms} ms |")
     lines.append("")
+    if not summary.cost_complete:
+        lines.append("> \\* partial — some calls had no usage data from the provider.")
+        lines.append("")
 
     # Results by category
     lines.append("## 6. Results by Category")
@@ -295,9 +303,19 @@ def render_markdown(summary: RunSummary, results: list[TestResult],
         lines.append("")
         lines.append(f"**Expected behavior:** {_md_escape(r.expected_behavior)}")
         lines.append("")
-        lines.append(f"**Result:** {STATUS_DISPLAY.get(r.status, r.status)} "
-                     f"&middot; **Score:** {r.score}/2 "
-                     f"&middot; **Latency:** {r.latency_ms} ms")
+        result_line = (f"**Result:** {STATUS_DISPLAY.get(r.status, r.status)} "
+                       f"&middot; **Score:** {r.score}/2 "
+                       f"&middot; **Latency:** {r.latency_ms} ms")
+        if r.prompt_tokens is not None and r.completion_tokens is not None:
+            result_line += (f" &middot; **Tokens:** {r.prompt_tokens} in / "
+                            f"{r.completion_tokens} out")
+        if r.provider == "mock":
+            result_line += " &middot; **Cost:** Mock"
+        elif r.model.endswith(":free"):
+            result_line += " &middot; **Cost:** Free"
+        elif r.cost_usd is not None:
+            result_line += f" &middot; **Cost:** ${r.cost_usd:.6f}"
+        lines.append(result_line)
         lines.append("")
         lines.append(f"**Reasoning:** {_md_escape(r.scoring_reason)}")
         lines.append("")
@@ -393,7 +411,17 @@ def render_html(summary: RunSummary, results: list[TestResult],
     body.append(_card("Pass Rate", f"{summary.pass_rate:.1%}"))
     body.append(_card("Weighted Pass", f"{summary.weighted_pass_rate:.1%}"))
     body.append(_card("Avg Score", f"{summary.average_score:.2f}"))
+    body.append(_card("Total Cost", _format_total_cost(summary),
+                      color="var(--muted)", anchor="#all-tests"))
+    body.append(_card("Total Tokens", f"{summary.total_tokens:,}",
+                      color="var(--muted)", anchor="#all-tests"))
+    body.append(_card("P95 Latency", f"{summary.p95_latency_ms} ms",
+                      color="var(--muted)", anchor="#all-tests"))
     body.append("</div>")
+    if not summary.cost_complete:
+        body.append("<p class='muted'><small>"
+                    "* partial &mdash; some calls had no usage data from the provider."
+                    "</small></p>")
 
     # Executive summary
     body.append("<h2>Executive Summary</h2>")
@@ -595,6 +623,7 @@ def _render_test_row(r: TestResult) -> str:
         f"<p>{html.escape(STATUS_DISPLAY.get(r.status, r.status))} "
         f"&middot; score {r.score}/2 "
         f"&middot; latency {r.latency_ms} ms"
+        f"{_render_tokens_cost(r)}"
         f"{(' &middot; error: ' + html.escape(r.error)) if r.error else ''}</p>"
         f"<p class='label'>Reasoning</p>"
         f"<p>{html.escape(r.scoring_reason)}</p>"
@@ -685,6 +714,43 @@ def _card(label: str, value: str, color: str | None = None,
     if anchor:
         return f"<a class='card-link' href='{html.escape(anchor)}'>{inner}</a>"
     return inner
+
+
+def _render_tokens_cost(r) -> str:
+    """Append ` &middot; tokens N in / M out &middot; cost ...` to a row.
+
+    Returns empty string if no token data captured. Per-row precision is 6
+    decimals so a cheap single test (mock or short prompt) doesn't render
+    as `$0.0000` and look broken.
+    """
+    parts = []
+    if r.prompt_tokens is not None and r.completion_tokens is not None:
+        parts.append(f"tokens {r.prompt_tokens} in / {r.completion_tokens} out")
+    if r.provider == "mock":
+        parts.append("cost Mock")
+    elif r.model.endswith(":free"):
+        parts.append("cost Free")
+    elif r.cost_usd is not None:
+        parts.append(f"cost ${r.cost_usd:.6f}")
+    if not parts:
+        return ""
+    return " &middot; " + " &middot; ".join(parts)
+
+
+def _format_total_cost(summary) -> str:
+    """Render the Total Cost card value with provider-aware semantics.
+
+    Mock and `:free` runs must not display ambiguous `$0.0000` — portfolio
+    screenshots would look broken. Partial runs (some calls missed usage)
+    show `~$X.XXXX*` with a footnote rendered once below the cards.
+    """
+    if summary.provider == "mock":
+        return "Mock run — $0.00"
+    if summary.total_cost_usd == 0.0 and summary.model.endswith(":free"):
+        return "$0.00 (free tier)"
+    if not summary.cost_complete:
+        return f"~${summary.total_cost_usd:.4f}*"
+    return f"${summary.total_cost_usd:.4f}"
 
 
 def _md_escape(text: str) -> str:

@@ -27,6 +27,7 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from src.engine.model_client import ModelClient, OpenAIClient, MockClient
+from src.engine.pricing import load_pricing
 from src.engine.response_logger import ResponseLogger
 from src.engine.schemas import TestCase
 from src.engine.test_runner import TestRunner
@@ -62,6 +63,11 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help="Only run the first N test cases of the selected suite.",
     )
     parser.add_argument(
+        "--per-suite-limit", type=int, default=None,
+        help="When --suite all, run the first N cases from each category "
+             "(single run, single combined report).",
+    )
+    parser.add_argument(
         "--seed", type=int, default=42,
         help="Seed for the mock provider (also used for run order stability).",
     )
@@ -84,14 +90,25 @@ def build_client(config: dict, *, mock: bool, model_override: str | None,
             timeout_seconds=float(config.get("timeout_seconds", 30)),
             system_prompt=config.get("system_prompt", ""),
             retry=config.get("retry", {}),
+            pricing=load_pricing(config),
         )
     raise ValueError(f"Unsupported provider {provider!r}. "
                      f"Use 'openai' or run with --mock.")
 
 
-def load_cases(suite: str, limit: int | None) -> tuple[list[TestCase], str]:
-    """Load TestCase objects for the requested suite name."""
-    if suite == "all":
+def load_cases(suite: str, limit: int | None,
+               per_suite_limit: int | None = None) -> tuple[list[TestCase], str]:
+    """Load TestCase objects for the requested suite name.
+
+    --per-suite-limit only applies when suite == "all"; takes first N cases
+    from each category, then concatenates. Useful for a cross-category smoke.
+    """
+    if suite == "all" and per_suite_limit is not None:
+        raws: list[dict] = []
+        for s in ALL_SUITES:
+            raws.extend(load_test_suite(s)[:per_suite_limit])
+        suite_label = f"all (top {per_suite_limit}/cat)"
+    elif suite == "all":
         raws = load_all_suites()
         suite_label = "all"
     else:
@@ -116,7 +133,8 @@ def main(argv: list[str] | None = None) -> int:
 
     # Build everything
     run_id = generate_run_id()
-    cases, suite_label = load_cases(args.suite, args.limit)
+    cases, suite_label = load_cases(args.suite, args.limit,
+                                    per_suite_limit=args.per_suite_limit)
     client = build_client(model_config, mock=args.mock,
                           model_override=args.model, seed=args.seed)
     logger = ResponseLogger(run_id)

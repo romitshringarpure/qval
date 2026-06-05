@@ -20,6 +20,7 @@ import time
 from typing import Protocol
 
 from src.engine.schemas import ModelResponse
+from src.engine.pricing import compute_cost
 from src.utils.time_utils import monotonic_ms, elapsed_ms
 
 
@@ -68,7 +69,8 @@ class OpenAIClient:
 
     def __init__(self, model: str, temperature: float, max_tokens: int,
                  timeout_seconds: float, system_prompt: str,
-                 retry: dict, api_key: str | None = None):
+                 retry: dict, api_key: str | None = None,
+                 pricing: dict | None = None):
         try:
             from openai import OpenAI  # local import so tests run without the SDK
         except ImportError as exc:  # pragma: no cover
@@ -91,6 +93,7 @@ class OpenAIClient:
         self.max_tokens = max_tokens
         self.system_prompt = system_prompt
         self.retry = retry
+        self.pricing = pricing or {}
 
     def complete(self, prompt: str) -> ModelResponse:
         start = monotonic_ms()
@@ -123,11 +126,29 @@ class OpenAIClient:
             )
 
         text = (resp.choices[0].message.content or "").strip()
+
+        # Token capture is non-streaming only. Defensive getattr chain
+        # because OpenRouter free models occasionally omit the usage block.
+        usage = getattr(resp, "usage", None)
+        prompt_tokens = getattr(usage, "prompt_tokens", None) if usage else None
+        completion_tokens = getattr(usage, "completion_tokens", None) if usage else None
+        total_tokens = getattr(usage, "total_tokens", None) if usage else None
+
+        cost_usd: float | None = None
+        if prompt_tokens is not None and completion_tokens is not None:
+            cost_usd, _status = compute_cost(
+                self.model, prompt_tokens, completion_tokens, self.pricing,
+            )
+
         return ModelResponse(
             text=text,
             latency_ms=elapsed_ms(start),
             model=self.model,
             provider=self.provider,
+            prompt_tokens=prompt_tokens,
+            completion_tokens=completion_tokens,
+            total_tokens=total_tokens,
+            cost_usd=cost_usd,
         )
 
 
@@ -191,11 +212,17 @@ class MockClient:
         text = self._respond(prompt)
         # simulate some latency variance for realistic-looking reports
         time.sleep(0)
+        prompt_tokens = max(1, len(prompt.split()))
+        completion_tokens = max(1, len(text.split()))
         return ModelResponse(
             text=text,
             latency_ms=elapsed_ms(start) + self._rng.randint(40, 220),
             model=self.model,
             provider=self.provider,
+            prompt_tokens=prompt_tokens,
+            completion_tokens=completion_tokens,
+            total_tokens=prompt_tokens + completion_tokens,
+            cost_usd=0.0,
         )
 
     # The ordering of these checks matters: more specific first.

@@ -13,6 +13,7 @@ test and easy to extend.
 
 from __future__ import annotations
 
+import statistics
 from typing import Callable, Optional
 
 from src.engine.model_client import ModelClient
@@ -76,6 +77,29 @@ class TestRunner:
                 "scoring_reason": f"Model call error: {error_msg}",
             }
 
+        # Sum token counts and cost across primary + paired calls. None on
+        # either side propagates as "unknown" rather than silently zeroing.
+        def _sum_opt(a: int | None, b: int | None) -> int | None:
+            if a is None and b is None:
+                return None
+            return (a or 0) + (b or 0)
+
+        prompt_tokens = _sum_opt(
+            primary.prompt_tokens, paired.prompt_tokens if paired else None,
+        )
+        completion_tokens = _sum_opt(
+            primary.completion_tokens, paired.completion_tokens if paired else None,
+        )
+        total_tokens = _sum_opt(
+            primary.total_tokens, paired.total_tokens if paired else None,
+        )
+        cost_usd: float | None
+        if primary.cost_usd is None and (paired is None or paired.cost_usd is None):
+            cost_usd = None
+        else:
+            cost_usd = (primary.cost_usd or 0.0) \
+                + ((paired.cost_usd or 0.0) if paired else 0.0)
+
         return TestResult(
             run_id=self.run_id,
             test_id=case.id,
@@ -99,6 +123,10 @@ class TestRunner:
             manual_review_required=case.manual_review_required or scoring["status"] == STATUS_NEEDS_REVIEW,
             detector_results=scoring.get("detector_results", []),
             error=error_msg,
+            prompt_tokens=prompt_tokens,
+            completion_tokens=completion_tokens,
+            total_tokens=total_tokens,
+            cost_usd=cost_usd,
         )
 
     # ---- aggregate ---------------------------------------------------------
@@ -119,6 +147,7 @@ class TestRunner:
         for r in results:
             cat = by_category.setdefault(r.category, {
                 "total": 0, "pass": 0, "fail": 0, "needs_review": 0,
+                "total_tokens": 0, "total_cost_usd": 0.0,
             })
             cat["total"] += 1
             if r.status == STATUS_PASS:
@@ -127,6 +156,8 @@ class TestRunner:
                 cat["fail"] += 1
             else:
                 cat["needs_review"] += 1
+            cat["total_tokens"] += r.total_tokens or 0
+            cat["total_cost_usd"] += r.cost_usd or 0.0
         for cat in by_category.values():
             cat["pass_rate"] = (cat["pass"] / cat["total"]) if cat["total"] else 0.0
 
@@ -134,6 +165,18 @@ class TestRunner:
                              if r.status == STATUS_FAIL and r.risk_level == "critical"]
         high_risk_failures = [r.test_id for r in results
                               if r.status == STATUS_FAIL and r.risk_level == "high"]
+
+        total_prompt_tokens = sum(r.prompt_tokens or 0 for r in results)
+        total_completion_tokens = sum(r.completion_tokens or 0 for r in results)
+        total_tokens = sum(r.total_tokens or 0 for r in results)
+        total_cost_usd = sum(r.cost_usd for r in results if r.cost_usd is not None)
+        # An errored call having no cost is expected, not "incomplete". Only
+        # non-errored calls without cost flag the run as partial.
+        cost_complete = all((r.cost_usd is not None) or bool(r.error) for r in results)
+
+        p50, p95, p99 = _latency_percentiles(
+            [r.latency_ms for r in results if not r.error]
+        )
 
         return RunSummary(
             run_id=self.run_id,
@@ -156,6 +199,14 @@ class TestRunner:
             high_risk_failures=high_risk_failures,
             report_path="",     # filled in by caller after report write
             evidence_dir="",    # filled in by caller after evidence write
+            total_prompt_tokens=total_prompt_tokens,
+            total_completion_tokens=total_completion_tokens,
+            total_tokens=total_tokens,
+            total_cost_usd=total_cost_usd,
+            cost_complete=cost_complete,
+            p50_latency_ms=p50,
+            p95_latency_ms=p95,
+            p99_latency_ms=p99,
         )
 
     def _weighted_pass_rate(self, results: list[TestResult]) -> float:
@@ -169,3 +220,20 @@ class TestRunner:
             if r.status == STATUS_PASS:
                 passing_weight += w
         return (passing_weight / total_weight) if total_weight else 0.0
+
+
+def _latency_percentiles(latencies: list[int]) -> tuple[int, int, int]:
+    """Return (p50, p95, p99) integer latencies.
+
+    For N < 5 we refuse to fabricate quantiles from too few samples and
+    return max() across the board instead — an honest signal that still
+    shows non-zero. Empty list returns zeros.
+    """
+    if not latencies:
+        return 0, 0, 0
+    if len(latencies) < 5:
+        m = max(latencies)
+        return m, m, m
+    qs = statistics.quantiles(latencies, n=100, method="inclusive")
+    # `quantiles(n=100)` returns 99 cut points: indexes 0..98 = P1..P99.
+    return int(qs[49]), int(qs[94]), int(qs[98])
