@@ -38,3 +38,18 @@ def test_init_force_overwrites(tmp_path):
     rc = main(["init", "--path", str(tmp_path), "--force"])
     assert rc == 0
     assert "provider:" in (tmp_path / "qval.yaml").read_text(encoding="utf-8")
+
+
+def test_shipped_template_suites_are_schema_valid():
+    """Every suite shipped by `qval init` must load via the native schema."""
+    import json
+    from qval.engine.schemas import TestCase
+    from qval.commands.init import TEMPLATES_DIR
+
+    suite_files = list((TEMPLATES_DIR / "suites").glob("*.json"))
+    assert suite_files, "no template suites found"
+    for suite_file in suite_files:
+        cases = json.loads(suite_file.read_text(encoding="utf-8"))
+        assert isinstance(cases, list) and cases
+        for raw in cases:
+            TestCase.from_dict(raw, source=str(suite_file))  # raises on invalid
