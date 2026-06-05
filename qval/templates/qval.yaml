@@ -1,5 +1,5 @@
 # Qval project config. See: qval doctor
 provider: mock          # mock | openai
 model: gpt-4o-mini      # model name (ignored when provider is mock)
-suites_dir: suites      # where test suites live
+suites_dir: suites      # where test suites live (not yet consumed by `qval run` — planned)
 outputs_dir: outputs    # where runs, reports, evidence are written

@@ -1,4 +1,4 @@
-# Starter release policy (consumed by `qval gate` once F-06 lands).
+# Starter release policy. Read by the policy engine (F-06) behind `qval gate` (F-04).
 # Edit thresholds to match your product's risk tolerance.
 release_policy:
   block_on:
