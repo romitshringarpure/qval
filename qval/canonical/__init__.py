@@ -34,6 +34,7 @@ from .schema import (
     # mappers
     map_native_status, map_native_severity,
 )
+from .io import save_canonical, load_canonical
 
 __all__ = [
     "SCHEMA_VERSION",
@@ -45,4 +46,5 @@ __all__ = [
     "CanonicalRun", "Case", "Finding", "Control", "Artifact",
     "Decision", "Waiver", "Reviewer", "EvidencePack",
     "map_native_status", "map_native_severity",
+    "save_canonical", "load_canonical",
 ]

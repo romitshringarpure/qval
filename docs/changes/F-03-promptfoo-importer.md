@@ -1,6 +1,6 @@
 # F-03 · Promptfoo Importer — Change Record
 
-**Status:** 🚧 In progress (design approved)
+**Status:** ✅ Done
 **Date:** 2026-06-05
 **Sprint:** 2
 **Depends on:** F-01 (canonical schema), F-02 (CLI foundation)
@@ -173,3 +173,27 @@ valid `run.json`, exit 0, round-trips through `load_canonical` /
 No DeepEval (F-09), no multi-file merge, no nested sub-subparsers, no
 entry-point plugin discovery, no per-tool divergent flags. Promptfoo is the
 only concrete importer F-03 ships; the seam proves the rest snap in.
+
+---
+
+## 8. Result
+
+`tests/test_import_promptfoo.py` — **24 tests**: mapper (nested + flat formats,
+provider split, status, score/reason/response, componentResults + telemetry in
+`extra`, severity resolution incl. unknown-raises, no-results-raises), loader
+(file, directory, malformed, missing), registry (lists promptfoo, unknown
+raises), io round-trip, and CLI (`qval import promptfoo … --out` writes a valid
+`run.json`, exit 0; bad path exit 1; `--default-severity` applied).
+
+**Full suite: 92 pass**, no regressions (the `import` stub test was removed as
+the command is now real; +24 importer tests).
+
+```
+python -m pytest tests/test_import_promptfoo.py -q   # 24 passed
+python -m pytest -q                                   # 92 passed
+```
+
+End-to-end smoke confirmed: `qval import promptfoo <results.json>` splits
+`openai:gpt-4o-mini` into provider/model, honors an explicit `severity: high`
+from a record's vars over the `info` default, carries the eval id + stats into
+`metadata`, and `qval import --help` lists `{promptfoo}` from the registry.
