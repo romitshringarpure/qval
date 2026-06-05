@@ -92,3 +92,10 @@ def test_doctor_unknown_provider_warns(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     rc = main(["doctor"])
     assert rc == 0  # unknown provider is WARN, not FAIL
+
+
+def test_run_mock_smoke(capsys):
+    rc = main(["run", "--suite", "all", "--mock", "--per-suite-limit", "1"])
+    out = capsys.readouterr().out
+    assert rc in (0, 1)  # 1 only if mock produced a critical failure
+    assert "Run ID" in out

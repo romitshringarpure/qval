@@ -107,7 +107,7 @@ def test_summary_token_totals_under_mock():
     import json
 
     exit_code = main([
-        "--mock", "--suite", "instruction_following", "--limit", "3",
+        "run", "--mock", "--suite", "instruction_following", "--limit", "3",
     ])
     assert exit_code in (0, 1)
 
