@@ -71,3 +71,24 @@ def test_doctor_fails_when_openai_key_missing(tmp_path, monkeypatch):
     monkeypatch.delenv("OPENAI_API_KEY", raising=False)
     rc = main(["doctor"])
     assert rc != 0
+
+
+def test_doctor_warns_on_missing_config(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)  # no qval.yaml here or above (isolated tmp)
+    rc = main(["doctor"])
+    assert rc == 0  # missing config is a WARN, not a failure
+
+
+def test_doctor_fails_on_unparseable_config(tmp_path, monkeypatch):
+    (tmp_path / "qval.yaml").write_text("provider: [unclosed\n", encoding="utf-8")
+    monkeypatch.chdir(tmp_path)
+    rc = main(["doctor"])
+    assert rc != 0  # present-but-broken config FAILs
+
+
+def test_doctor_unknown_provider_warns(tmp_path, monkeypatch):
+    main(["init", "--path", str(tmp_path)])
+    (tmp_path / "qval.yaml").write_text("provider: anthropic\n", encoding="utf-8")
+    monkeypatch.chdir(tmp_path)
+    rc = main(["doctor"])
+    assert rc == 0  # unknown provider is WARN, not FAIL

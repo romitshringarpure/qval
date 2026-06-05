@@ -11,6 +11,9 @@ from qval.config import find_config_file, load_project_config, ProjectConfigErro
 
 PASS, WARN, FAIL = "PASS", "WARN", "FAIL"
 
+# import name -> pip install name (when they differ)
+DEP_INSTALL = {"yaml": "pyyaml"}
+
 
 def _line(status: str, msg: str) -> None:
     print(f"[{status}] {msg}")
@@ -37,14 +40,17 @@ def run(args: argparse.Namespace) -> int:
             importlib.import_module(mod)
             _line(PASS, f"dependency '{mod}' importable")
         except ImportError:
-            _line(FAIL, f"dependency '{mod}' missing")
+            hint = DEP_INSTALL.get(mod, mod)
+            _line(FAIL, f"dependency '{mod}' missing (pip install {hint})")
             failed = True
 
-    # Project config
+    # Project config. Missing is OK (WARN); present-but-unparseable is a FAIL
+    # and we then skip checks that depend on config values.
     cfg_path = find_config_file()
+    config_ok = True
+    cfg: dict = {}
     if cfg_path is None:
         _line(WARN, "no qval.yaml found (run `qval init`)")
-        cfg = {}
     else:
         try:
             cfg = load_project_config(cfg_path)
@@ -52,32 +58,38 @@ def run(args: argparse.Namespace) -> int:
         except ProjectConfigError as exc:
             _line(FAIL, f"config error: {exc}")
             failed = True
-            cfg = {}
+            config_ok = False
 
     # Provider readiness
-    provider = cfg.get("provider", "mock")
-    if provider == "mock":
-        _line(PASS, "provider 'mock' (no API key needed)")
-    elif provider == "openai":
-        if os.environ.get("OPENAI_API_KEY"):
-            _line(PASS, "OPENAI_API_KEY present")
-        else:
-            _line(FAIL, "OPENAI_API_KEY not set (required for provider 'openai')")
-            failed = True
+    if not config_ok:
+        _line(WARN, "provider check skipped (config did not parse)")
     else:
-        _line(WARN, f"unknown provider '{provider}'")
+        provider = cfg.get("provider", "mock")
+        if provider == "mock":
+            _line(PASS, "provider 'mock' (no API key needed)")
+        elif provider == "openai":
+            if os.environ.get("OPENAI_API_KEY"):
+                _line(PASS, "OPENAI_API_KEY present")
+            else:
+                _line(FAIL, "OPENAI_API_KEY not set (required for provider 'openai')")
+                failed = True
+        else:
+            _line(WARN, f"unknown provider '{provider}'")
 
     # Outputs dir writable
-    outputs = Path(cfg.get("outputs_dir", "outputs"))
-    try:
-        outputs.mkdir(parents=True, exist_ok=True)
-        probe = outputs / ".doctor_write_test"
-        probe.write_text("ok", encoding="utf-8")
-        probe.unlink()
-        _line(PASS, f"outputs dir writable: {outputs}")
-    except OSError as exc:
-        _line(FAIL, f"outputs dir not writable: {exc}")
-        failed = True
+    if not config_ok:
+        _line(WARN, "outputs dir check skipped (config did not parse)")
+    else:
+        outputs = Path(cfg.get("outputs_dir", "outputs"))
+        try:
+            outputs.mkdir(parents=True, exist_ok=True)
+            probe = outputs / ".doctor_write_test"
+            probe.write_text("ok", encoding="utf-8")
+            probe.unlink()
+            _line(PASS, f"outputs dir writable: {outputs}")
+        except OSError as exc:
+            _line(FAIL, f"outputs dir not writable: {exc}")
+            failed = True
 
     print()
     if failed:
