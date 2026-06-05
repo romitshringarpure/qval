@@ -53,3 +53,21 @@ def test_shipped_template_suites_are_schema_valid():
         assert isinstance(cases, list) and cases
         for raw in cases:
             TestCase.from_dict(raw, source=str(suite_file))  # raises on invalid
+
+
+def test_doctor_healthy_mock_project(tmp_path, monkeypatch):
+    main(["init", "--path", str(tmp_path)])
+    monkeypatch.chdir(tmp_path)
+    rc = main(["doctor"])
+    assert rc == 0  # mock provider needs no API key
+
+
+def test_doctor_fails_when_openai_key_missing(tmp_path, monkeypatch):
+    main(["init", "--path", str(tmp_path)])
+    (tmp_path / "qval.yaml").write_text(
+        "provider: openai\nmodel: gpt-4o-mini\n", encoding="utf-8"
+    )
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    rc = main(["doctor"])
+    assert rc != 0
