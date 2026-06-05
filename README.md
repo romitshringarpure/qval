@@ -202,9 +202,9 @@ qval run --mock  # run the native eval suite offline against the mock provider
 | `qval init` | scaffold a project (qval.yaml, policy.yaml, suites/) |
 | `qval doctor` | validate environment + config |
 | `qval run` | run the native eval suite |
+| `qval import` | import Promptfoo results into a canonical run.json (F-03) |
 | `qval gate` | release go/no-go (planned, F-04) |
 | `qval report` | HTML/MD report (planned, F-05) |
-| `qval import` | import Promptfoo/DeepEval (planned, F-03) |
 
 ## Configure your API key
 

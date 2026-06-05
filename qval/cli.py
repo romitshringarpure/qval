@@ -1,7 +1,7 @@
 """Qval command-line entry point.
 
 Usage:
-    qval init | doctor | run | gate | report | import
+    qval init | doctor | run | import | gate | report
 """
 from __future__ import annotations
 
@@ -10,6 +10,7 @@ import argparse
 from qval.commands import init as init_cmd
 from qval.commands import doctor as doctor_cmd
 from qval.commands import run as run_cmd
+from qval.commands import import_cmd
 from qval.commands import stubs
 
 
@@ -23,6 +24,7 @@ def build_parser() -> argparse.ArgumentParser:
     init_cmd.add_parser(subparsers)
     doctor_cmd.add_parser(subparsers)
     run_cmd.add_parser(subparsers)
+    import_cmd.add_parser(subparsers)
     stubs.add_parsers(subparsers)
 
     return parser
