@@ -1,4 +1,4 @@
-# F-01 · Canonical Evidence Schema — Internal Change Record
+# F-01 · Canonical Evidence Schema — Change Record
 
 **Status:** ✅ Done
 **Date:** 2026-06-04
