@@ -1,8 +1,8 @@
-"""Stub subcommands for features not yet implemented (report).
+"""Stub subcommands for features not yet implemented.
 
-Registered so the command surface is complete and discoverable now; each owning
-feature replaces its stub. (F-03 import and F-04 gate shipped — see
-qval/commands/import_cmd.py and gate_cmd.py.)
+The registry is empty today — init/doctor/run/import/gate/report are all real.
+Kept as the seam where a future not-yet-built command (F-06+) is registered so
+the command surface stays discoverable before its feature lands.
 """
 from __future__ import annotations
 
@@ -10,9 +10,8 @@ import argparse
 
 NOT_IMPLEMENTED_EXIT = 3
 
-_STUBS = {
-    "report": "F-05",
-}
+# name -> owning feature. Empty until the next unbuilt command is scaffolded.
+_STUBS: dict[str, str] = {}
 
 
 def _make_run(name: str, feature: str):

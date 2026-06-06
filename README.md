@@ -204,7 +204,7 @@ qval run --mock  # run the native eval suite offline against the mock provider
 | `qval run` | run the native eval suite |
 | `qval import` | import Promptfoo results into a canonical run.json (F-03) |
 | `qval gate` | diff vs baseline → GO/CONDITIONAL-GO/NO-GO decision (F-04) |
-| `qval report` | HTML/MD report (planned, F-05) |
+| `qval report` | shareable HTML/Markdown release report (F-05) |
 
 ## Configure your API key
 
