@@ -80,8 +80,12 @@ def build_client(config: dict, *, mock: bool, model_override: str | None,
             retry=config.get("retry", {}),
             pricing=load_pricing(config),
         )
+    if provider == "http":
+        from qval.targets import HttpTarget, HttpClient
+        target = HttpTarget.from_config(config.get("target", {}))
+        return HttpClient(target, model=model_override or "http-target")
     raise ValueError(f"Unsupported provider {provider!r}. "
-                     f"Use 'openai' or run with --mock.")
+                     f"Use 'openai', 'http', or run with --mock.")
 
 
 def load_cases(suite: str, limit: int | None,
