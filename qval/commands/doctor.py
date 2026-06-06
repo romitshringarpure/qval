@@ -73,6 +73,13 @@ def run(args: argparse.Namespace) -> int:
             else:
                 _line(FAIL, "OPENAI_API_KEY not set (required for provider 'openai')")
                 failed = True
+        elif provider == "http":
+            target = cfg.get("target")
+            if isinstance(target, dict) and target.get("url"):
+                _line(PASS, f"provider 'http' target: {target['url']}")
+            else:
+                _line(FAIL, "provider 'http' requires a 'target' with a 'url'")
+                failed = True
         else:
             _line(WARN, f"unknown provider '{provider}'")
 

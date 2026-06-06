@@ -201,7 +201,7 @@ qval run --mock  # run the native eval suite offline against the mock provider
 |---------|--------|
 | `qval init` | scaffold a project (qval.yaml, policy.yaml, suites/) |
 | `qval doctor` | validate environment + config |
-| `qval run` | run the native eval suite |
+| `qval run` | run the native eval suite (provider: mock / openai / http target adapter, F-11) |
 | `qval import` | import Promptfoo (F-03) or DeepEval (F-09) results into a canonical run.json |
 | `qval gate` | diff vs baseline → GO/CONDITIONAL-GO/NO-GO decision, policy-as-code (F-04, F-06) |
 | `qval map` | map findings to OWASP-LLM / NIST AI RMF controls + coverage matrix (F-07) |
