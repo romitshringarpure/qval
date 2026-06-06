@@ -16,6 +16,7 @@ from qval.commands import map_cmd
 from qval.commands import report_cmd
 from qval.commands import pack_cmd
 from qval.commands import review_cmd
+from qval.commands import judge_cmd
 from qval.commands import stubs
 
 
@@ -35,6 +36,7 @@ def build_parser() -> argparse.ArgumentParser:
     report_cmd.add_parser(subparsers)
     pack_cmd.add_parser(subparsers)
     review_cmd.add_parser(subparsers)
+    judge_cmd.add_parser(subparsers)
     stubs.add_parsers(subparsers)
 
     return parser

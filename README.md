@@ -208,6 +208,7 @@ qval run --mock  # run the native eval suite offline against the mock provider
 | `qval report` | shareable HTML/Markdown release report (F-05) |
 | `qval pack` | seal a run into a signed, tamper-evident evidence pack (F-08) |
 | `qval review` | human review workflow: queue, assign, approve/reject/waive, export packet (F-10) |
+| `qval judge` | LLM judge-assist: pre-triage borderline needs_review findings, human override wins (F-12) |
 
 ## Configure your API key
 
