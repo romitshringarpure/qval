@@ -209,6 +209,8 @@ qval run --mock  # run the native eval suite offline against the mock provider
 | `qval pack` | seal a run into a signed, tamper-evident evidence pack (F-08) |
 | `qval review` | human review workflow: queue, assign, approve/reject/waive, export packet (F-10) |
 | `qval judge` | LLM judge-assist: pre-triage borderline needs_review findings, human override wins (F-12) |
+| `qval passport` | seal a run into a signed, independently verifiable AI Release Passport (F-13) |
+| `qval verify` | independently verify a passport's integrity + provenance against a published key (F-13) |
 
 ## Configure your API key
 

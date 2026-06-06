@@ -51,6 +51,7 @@ outputs/raw_responses/*
 outputs/results/*
 outputs/reports/*
 outputs/evidence/*
+outputs/passports/*
 !outputs/logs/.gitkeep
 !outputs/raw_responses/.gitkeep
 !outputs/results/.gitkeep
