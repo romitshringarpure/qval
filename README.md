@@ -203,8 +203,10 @@ qval run --mock  # run the native eval suite offline against the mock provider
 | `qval doctor` | validate environment + config |
 | `qval run` | run the native eval suite |
 | `qval import` | import Promptfoo results into a canonical run.json (F-03) |
-| `qval gate` | diff vs baseline → GO/CONDITIONAL-GO/NO-GO decision (F-04) |
+| `qval gate` | diff vs baseline → GO/CONDITIONAL-GO/NO-GO decision, policy-as-code (F-04, F-06) |
+| `qval map` | map findings to OWASP-LLM / NIST AI RMF controls + coverage matrix (F-07) |
 | `qval report` | shareable HTML/Markdown release report (F-05) |
+| `qval pack` | seal a run into a signed, tamper-evident evidence pack (F-08) |
 
 ## Configure your API key
 
@@ -326,7 +328,7 @@ A smoke test exercises the runner end-to-end against the mock provider, so a cle
 - Drift tracking — compare a current run against a baseline run.
 - HTML diff view between two runs.
 - Anthropic, Gemini, and local-model providers (currently only OpenAI is wired; Anthropic is stubbed).
-- Coverage matrix: which OWASP-LLM / NIST AI RMF risks are exercised by which tests.
+- Coverage matrix: which OWASP-LLM / NIST AI RMF risks are exercised by which tests. ✅ shipped via `qval map` (F-07).
 
 ## License
 
