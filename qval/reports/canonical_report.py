@@ -17,6 +17,10 @@ from qval.canonical import (
     DECISION_GO, DECISION_CONDITIONAL_GO, DECISION_NO_GO,
 )
 from qval.gate.diff import RunDiff
+from qval.controls import (
+    coverage as control_coverage,
+    COVERAGE_FAILED, COVERAGE_NEEDS_REVIEW, COVERAGE_NOT_EXERCISED,
+)
 from qval.reports.html_template import HTML_SHELL
 
 # Verdict -> banner color (inline, so the shared shell stays unmodified).
@@ -97,19 +101,23 @@ def render_markdown(run: CanonicalRun, diff: RunDiff | None,
     if diff is not None:
         out.extend(_markdown_diff(run, diff))
 
+    if run.controls:
+        out.extend(_markdown_controls(run))
+
     out.append("## Findings")
     out.append("")
-    out.append("| Case | Category | Status | Severity | Score | Reason |")
-    out.append("| --- | --- | --- | --- | --- | --- |")
+    out.append("| Case | Category | Status | Severity | Score | Controls | Reason |")
+    out.append("| --- | --- | --- | --- | --- | --- | --- |")
     name_by_case = {c.case_id: c.name for c in run.cases}
     cat_by_case = {c.case_id: c.category for c in run.cases}
     for f in run.findings:
         score = "—" if f.score is None else f"{f.score:.2f}"
         reason = (f.reason or "").replace("|", "\\|").replace("\n", " ")
+        controls = ", ".join(f.control_ids) or "—"
         out.append(
             f"| {name_by_case.get(f.case_id, f.case_id)} "
             f"| {cat_by_case.get(f.case_id, '')} | {f.status} | {f.severity} "
-            f"| {score} | {reason} |"
+            f"| {score} | {controls} | {reason} |"
         )
     out.append("")
 
@@ -156,6 +164,25 @@ def _markdown_diff(run: CanonicalRun, diff: RunDiff) -> list[str]:
             or diff.improvements or diff.category_regressions):
         out.append("_No changes vs baseline._")
         out.append("")
+    return out
+
+
+_COVERAGE_MARK = {
+    COVERAGE_FAILED: "❌ failed",
+    COVERAGE_NEEDS_REVIEW: "⚠️ needs review",
+    COVERAGE_NOT_EXERCISED: "— not exercised",
+}
+
+
+def _markdown_controls(run: CanonicalRun) -> list[str]:
+    out = ["## Control Coverage", ""]
+    out.append("| Control | Framework | Title | Status | Passed/Total |")
+    out.append("| --- | --- | --- | --- | --- |")
+    for c in control_coverage(run):
+        status = _COVERAGE_MARK.get(c.status, "✅ passed")
+        out.append(f"| {c.control_id} | {c.framework} | {c.title} | {status} "
+                   f"| {c.passed}/{c.total} |")
+    out.append("")
     return out
 
 
@@ -208,23 +235,28 @@ def render_html(run: CanonicalRun, diff: RunDiff | None,
     if diff is not None:
         body.extend(_html_diff(run, diff, e))
 
+    if run.controls:
+        body.extend(_html_controls(run, e))
+
     # Findings table
     body.append("<h2>Findings</h2>")
     name_by_case = {c.case_id: c.name for c in run.cases}
     cat_by_case = {c.case_id: c.category for c in run.cases}
     body.append("<table><thead><tr><th>Case</th><th>Category</th><th>Status</th>"
-                "<th>Severity</th><th>Score</th><th>Reason</th></tr></thead><tbody>")
+                "<th>Severity</th><th>Score</th><th>Controls</th><th>Reason</th>"
+                "</tr></thead><tbody>")
     for f in run.findings:
         status_cls = _STATUS_PILL.get(f.status, "")
         status_html = (f'<span class="pill pill-{status_cls}">{e(f.status)}</span>'
                        if status_cls else e(f.status))
         score = "—" if f.score is None else f"{f.score:.2f}"
+        controls = ", ".join(e(cid) for cid in f.control_ids) or "—"
         body.append(
             f"<tr><td>{e(name_by_case.get(f.case_id, f.case_id))}</td>"
             f"<td>{e(cat_by_case.get(f.case_id, ''))}</td>"
             f"<td>{status_html}</td>"
             f'<td><span class="pill pill-{e(f.severity)}">{e(f.severity)}</span></td>'
-            f"<td>{score}</td><td>{e(f.reason or '')}</td></tr>"
+            f"<td>{score}</td><td>{controls}</td><td>{e(f.reason or '')}</td></tr>"
         )
     body.append("</tbody></table>")
 
@@ -259,4 +291,28 @@ def _html_diff(run: CanonicalRun, diff: RunDiff, e) -> list[str]:
             out.append(f"<li>{e(c.category)}: {c.baseline_pass_rate:.0%} → "
                        f"{c.current_pass_rate:.0%}</li>")
         out.append("</ul>")
+    return out
+
+
+# Coverage status -> pill class (reuse severity/status pill palette).
+_COVERAGE_PILL = {
+    COVERAGE_FAILED: "critical",
+    COVERAGE_NEEDS_REVIEW: "medium",
+    COVERAGE_NOT_EXERCISED: "low",
+}
+
+
+def _html_controls(run: CanonicalRun, e) -> list[str]:
+    out = ["<h2>Control Coverage</h2>"]
+    out.append("<table><thead><tr><th>Control</th><th>Framework</th><th>Title</th>"
+               "<th>Status</th><th>Passed/Total</th></tr></thead><tbody>")
+    for c in control_coverage(run):
+        pill = _COVERAGE_PILL.get(c.status, "passed")
+        out.append(
+            f"<tr><td><code>{e(c.control_id)}</code></td><td>{e(c.framework)}</td>"
+            f"<td>{e(c.title)}</td>"
+            f'<td><span class="pill pill-{pill}">{e(c.status)}</span></td>'
+            f"<td>{c.passed}/{c.total}</td></tr>"
+        )
+    out.append("</tbody></table>")
     return out
