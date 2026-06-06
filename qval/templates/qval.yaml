@@ -16,3 +16,15 @@ outputs_dir: outputs    # where runs, reports, evidence are written
 #   response_path: $.message.content        # JSONPath-lite (dots + [index])
 #   timeout_seconds: 30
 #   retry: {max_attempts: 3, initial_backoff_seconds: 1, backoff_multiplier: 2}
+
+# LLM judge-assist (F-12): pre-triage borderline needs_review findings. The
+# judge annotates a suggestion + confidence + rationale; the human override
+# always wins. It never runs on the severity_not bucket (critical).
+# judge_assist:
+#   enabled: true
+#   only_when:
+#     status: needs_review
+#     severity_not: critical
+#   model: claude-sonnet-4-6
+#   require_human_final_decision: true   # false = auto-apply above min_confidence
+#   min_confidence: 0.7
