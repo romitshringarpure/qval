@@ -1,8 +1,8 @@
-"""Stub subcommands for features not yet implemented (gate/report).
+"""Stub subcommands for features not yet implemented (report).
 
 Registered so the command surface is complete and discoverable now; each owning
-feature (F-04 gate, F-05 report) replaces its stub. (F-03 import shipped — see
-qval/commands/import_cmd.py.)
+feature replaces its stub. (F-03 import and F-04 gate shipped — see
+qval/commands/import_cmd.py and gate_cmd.py.)
 """
 from __future__ import annotations
 
@@ -11,7 +11,6 @@ import argparse
 NOT_IMPLEMENTED_EXIT = 3
 
 _STUBS = {
-    "gate": "F-04",
     "report": "F-05",
 }
 
