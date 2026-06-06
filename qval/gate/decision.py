@@ -23,17 +23,26 @@ POLICY_VERSION = "builtin-v1"
 
 @dataclass
 class GateThresholds:
-    """Built-in gate rules (the F-06 policy seam)."""
+    """Gate rules. Built-in defaults today; F-06 constructs these from a
+    ``policy.yaml`` (see ``qval/gate/policy.py``) without changing the engine."""
 
     block_new_severities: frozenset[str] = field(
         default_factory=lambda: frozenset({SEVERITY_CRITICAL, SEVERITY_HIGH})
     )
     critical_floor: bool = True          # block on any current critical failure
     min_pass_rate: float | None = None   # opt-in pass-rate floor
+    # Failures at these severities never block, but force CONDITIONAL-GO so a
+    # human signs off (policy `require_review`). Empty = no review gate.
+    require_review_severities: frozenset[str] = field(default_factory=frozenset)
 
 
-def evaluate(diff: RunDiff, thresholds: GateThresholds | None = None) -> Decision:
-    """Apply the ruleset to a diff and return a release Decision."""
+def evaluate(diff: RunDiff, thresholds: GateThresholds | None = None,
+             policy_version: str = POLICY_VERSION) -> Decision:
+    """Apply the ruleset to a diff and return a release Decision.
+
+    ``policy_version`` stamps the verdict's provenance: ``"builtin-v1"`` for the
+    default rules, or a policy-file identifier when F-06 supplies one.
+    """
     t = thresholds or GateThresholds()
     block: list[str] = []
 
@@ -65,7 +74,7 @@ def evaluate(diff: RunDiff, thresholds: GateThresholds | None = None) -> Decisio
                      f"{t.min_pass_rate:.0%}")
 
     if block:
-        return _decision(DECISION_NO_GO, block)
+        return _decision(DECISION_NO_GO, block, policy_version)
 
     # Not blocked — anything that warrants caution?
     conditional: list[str] = []
@@ -75,13 +84,27 @@ def evaluate(diff: RunDiff, thresholds: GateThresholds | None = None) -> Decisio
     )
     for sev, n in minor.items():
         conditional.append(f"{n} new {sev} finding(s) vs baseline")
+
+    # Policy require_review: current failures at a review severity that are not
+    # already named above (new failures get named there) push to CONDITIONAL.
+    if t.require_review_severities:
+        named = {f.case_id for f in diff.new_failures}
+        review = _by_severity(
+            [f for f in diff.current_failures
+             if f.severity in t.require_review_severities and f.case_id not in named],
+            t.require_review_severities,
+        )
+        for sev, n in review.items():
+            conditional.append(f"{n} {sev} finding(s) require review per policy")
+
     if diff.needs_review:
         conditional.append(f"{len(diff.needs_review)} finding(s) require human review")
 
     if conditional:
-        return _decision(DECISION_CONDITIONAL_GO, conditional)
+        return _decision(DECISION_CONDITIONAL_GO, conditional, policy_version)
 
-    return _decision(DECISION_GO, ["no new failures or regressions vs baseline"])
+    return _decision(DECISION_GO, ["no new failures or regressions vs baseline"],
+                     policy_version)
 
 
 def _by_severity(findings, allowed) -> dict[str, int]:
@@ -96,6 +119,7 @@ def _by_severity(findings, allowed) -> dict[str, int]:
     return dict(sorted(counts.items(), key=lambda kv: -SEVERITY_RANK[kv[0]]))
 
 
-def _decision(verdict: str, rationale: list[str]) -> Decision:
+def _decision(verdict: str, rationale: list[str],
+              policy_version: str = POLICY_VERSION) -> Decision:
     return Decision(verdict=verdict, rationale=rationale,
-                    decided_at=now_utc_iso(), policy_version=POLICY_VERSION)
+                    decided_at=now_utc_iso(), policy_version=policy_version)

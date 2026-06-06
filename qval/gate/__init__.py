@@ -9,8 +9,10 @@ Two pure modules — ``diff`` (compare two canonical runs) and ``decision``
 
 from .diff import diff_runs, RunDiff, Regression, CategoryDelta
 from .decision import evaluate, GateThresholds, POLICY_VERSION
+from .policy import load_policy, discover_policy, LoadedPolicy, PolicyError
 
 __all__ = [
     "diff_runs", "RunDiff", "Regression", "CategoryDelta",
     "evaluate", "GateThresholds", "POLICY_VERSION",
+    "load_policy", "discover_policy", "LoadedPolicy", "PolicyError",
 ]
