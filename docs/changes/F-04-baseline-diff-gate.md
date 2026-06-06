@@ -1,6 +1,6 @@
 # F-04 · Baseline Diff and `qval gate` — Change Record
 
-**Status:** 🚧 In progress (design approved)
+**Status:** ✅ Done
 **Date:** 2026-06-05
 **Sprint:** 3
 **Depends on:** F-01 (canonical schema), F-03 (canonical `run.json` to diff)
@@ -134,3 +134,27 @@ NO-GO exit 1, GO exit 0, `--out` persists the decision, bad path exit 2.
 No policy-as-code (F-06 — `GateThresholds` is the seam), no control population
 (F-07 — control regressions render when `control_ids` exist, empty until then),
 no waiver/reviewer logic (F-10), no trend charts.
+
+---
+
+## 9. Result
+
+`tests/test_gate.py` — **20 tests**: diff (new failure, improvement, severity
+regression, status regression, no-baseline = all-new, pass-rate delta, category
+regression, identical → empty), decision (GO clean, NO-GO new-critical, NO-GO
+critical-floor on a pre-existing critical, NO-GO below min-pass-rate, CONDITIONAL
+on new-medium, CONDITIONAL on needs_review, `--block-severity` override), CLI
+(prints DECISION, NO-GO exit 1, GO exit 0, `--out` persists the decision, bad
+path exit 2).
+
+**Full suite: 111 pass**, no regressions (the `gate` stub test was removed as
+the command is now real; +20 gate tests). End-to-end smoke confirmed:
+`qval gate --current cur.json --baseline base.json --out gated.json` prints
+`DECISION: NO-GO`, exits 1, and `gated.json` carries `decision.verdict=NO-GO`,
+`policy_version=builtin-v1`. No-baseline + `--min-pass-rate 0.9` stacks both an
+absolute-critical and a pass-rate-floor rationale.
+
+```
+python -m pytest tests/test_gate.py -q   # 20 passed
+python -m pytest -q                       # 111 passed
+```
