@@ -17,6 +17,8 @@ from qval.commands import report_cmd
 from qval.commands import pack_cmd
 from qval.commands import review_cmd
 from qval.commands import judge_cmd
+from qval.commands import passport_cmd
+from qval.commands import verify_cmd
 from qval.commands import stubs
 
 
@@ -37,6 +39,8 @@ def build_parser() -> argparse.ArgumentParser:
     pack_cmd.add_parser(subparsers)
     review_cmd.add_parser(subparsers)
     judge_cmd.add_parser(subparsers)
+    passport_cmd.add_parser(subparsers)
+    verify_cmd.add_parser(subparsers)
     stubs.add_parsers(subparsers)
 
     return parser
