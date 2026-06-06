@@ -12,8 +12,19 @@ from dataclasses import dataclass, field
 from qval.canonical import (
     CanonicalRun, Finding,
     STATUS_PASSED, STATUS_FAILED, STATUS_NEEDS_REVIEW,
+    STATUS_WAIVED, STATUS_APPROVED, STATUS_BLOCKED,
 )
 from qval.canonical.schema import SEVERITY_RANK
+
+# A finding blocks the gate if it failed or a reviewer explicitly blocked it
+# (F-10 reject). A reviewer can resolve a failure by approving or waiving it —
+# those count as cleared, not failing.
+FAILING_STATUSES = frozenset({STATUS_FAILED, STATUS_BLOCKED})
+RESOLVED_STATUSES = frozenset({STATUS_PASSED, STATUS_APPROVED, STATUS_WAIVED})
+
+
+def is_failing(status: str) -> bool:
+    return status in FAILING_STATUSES
 
 
 @dataclass
@@ -64,9 +75,9 @@ def diff_runs(baseline: CanonicalRun | None, current: CanonicalRun) -> RunDiff:
     for f in current.findings:
         prior = base_by_case.get(f.case_id)
 
-        if f.status == STATUS_FAILED:
+        if is_failing(f.status):
             diff.current_failures.append(f)
-            if prior is None or prior.status != STATUS_FAILED:
+            if prior is None or not is_failing(prior.status):
                 # newly failing (absent before, or was passing / needs_review)
                 diff.new_failures.append(f)
             elif SEVERITY_RANK[f.severity] > SEVERITY_RANK[prior.severity]:
@@ -81,7 +92,7 @@ def diff_runs(baseline: CanonicalRun | None, current: CanonicalRun) -> RunDiff:
             diff.needs_review.append(f)
 
         if (f.status == STATUS_PASSED and prior is not None
-                and prior.status == STATUS_FAILED):
+                and is_failing(prior.status)):
             diff.improvements.append(f)
 
     diff.pass_rate_current = _pass_rate(current)
@@ -107,7 +118,9 @@ def _pass_rate(run: CanonicalRun) -> float:
     total = len(run.findings)
     if total == 0:
         return 1.0                      # vacuously: nothing failing
-    passed = sum(1 for f in run.findings if f.status == STATUS_PASSED)
+    # Approved/waived findings are resolved-acceptable: they count toward the
+    # rate, not against it (a reviewer signed off).
+    passed = sum(1 for f in run.findings if f.status in RESOLVED_STATUSES)
     return passed / total
 
 
@@ -118,7 +131,7 @@ def _category_rates(run: CanonicalRun) -> dict[str, float]:
     for f in run.findings:
         cat = cat_by_case.get(f.case_id, "")
         totals[cat] = totals.get(cat, 0) + 1
-        if f.status == STATUS_PASSED:
+        if f.status in RESOLVED_STATUSES:
             passes[cat] = passes.get(cat, 0) + 1
     return {cat: passes.get(cat, 0) / n for cat, n in totals.items() if n}
 

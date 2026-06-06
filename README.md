@@ -207,6 +207,7 @@ qval run --mock  # run the native eval suite offline against the mock provider
 | `qval map` | map findings to OWASP-LLM / NIST AI RMF controls + coverage matrix (F-07) |
 | `qval report` | shareable HTML/Markdown release report (F-05) |
 | `qval pack` | seal a run into a signed, tamper-evident evidence pack (F-08) |
+| `qval review` | human review workflow: queue, assign, approve/reject/waive, export packet (F-10) |
 
 ## Configure your API key
 

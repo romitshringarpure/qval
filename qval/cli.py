@@ -15,6 +15,7 @@ from qval.commands import gate_cmd
 from qval.commands import map_cmd
 from qval.commands import report_cmd
 from qval.commands import pack_cmd
+from qval.commands import review_cmd
 from qval.commands import stubs
 
 
@@ -33,6 +34,7 @@ def build_parser() -> argparse.ArgumentParser:
     map_cmd.add_parser(subparsers)
     report_cmd.add_parser(subparsers)
     pack_cmd.add_parser(subparsers)
+    review_cmd.add_parser(subparsers)
     stubs.add_parsers(subparsers)
 
     return parser
