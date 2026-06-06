@@ -10,14 +10,6 @@ def test_no_command_prints_help_and_exits_nonzero(capsys):
     assert "usage" in captured.out.lower() or "usage" in captured.err.lower()
 
 
-@pytest.mark.parametrize("cmd", ["report"])
-def test_stub_commands_report_not_implemented(cmd, capsys):
-    rc = main([cmd])
-    captured = capsys.readouterr()
-    assert rc == 3
-    assert "not implemented" in (captured.out + captured.err).lower()
-
-
 def test_init_creates_scaffold(tmp_path):
     rc = main(["init", "--path", str(tmp_path)])
     assert rc == 0

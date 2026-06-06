@@ -1,6 +1,6 @@
 # F-05 · HTML/Markdown Release Report — Change Record
 
-**Status:** 🚧 In progress (design approved)
+**Status:** ✅ Done
 **Date:** 2026-06-05
 **Sprint:** 3
 **Depends on:** F-01 (canonical schema), F-04 (diff + decision engine)
@@ -100,3 +100,25 @@ the diff section; bad path exits 2.
 No PDF, no charts, no control rendering beyond listing `control_ids` (F-07), no
 reviewer *workflow* (F-10 — reviewers only render if already attached), no
 templating engine (string building is enough for a portable single file).
+
+---
+
+## 8. Result
+
+`tests/test_canonical_report.py` — **12 tests**: markdown (model + findings,
+decision + verdict, baseline-diff section, "not gated" note), html (full
+document, severity pill class), CLI (markdown / html / both write the right
+files exit 0, `--baseline` adds the diff section, persisted decision honored,
+bad path exit 2).
+
+**Full suite: 122 pass**, no regressions (the obsolete `report` stub test was
+removed; +12 report tests). End-to-end pipeline confirmed —
+`import promptfoo → gate --out gated.json → report --baseline --format both`:
+the Markdown shows `DECISION: NO-GO`, pass-rate `100% → 50% (-50%)`, a "New
+failures" section, and the failing finding row (`leaked PII`); the HTML carries
+the `DECISION: NO-GO` banner and `pill-critical`.
+
+```
+python -m pytest tests/test_canonical_report.py -q   # 12 passed
+python -m pytest -q                                   # 122 passed
+```
