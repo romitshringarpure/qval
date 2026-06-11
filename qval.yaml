@@ -1,0 +1,5 @@
+# Qval project config for this repo checkout. Marks the project root so the
+# CLI resolves config/, test_cases/, and outputs/ here regardless of cwd.
+provider: openai        # mock | openai
+model: openai/gpt-oss-20b:free   # actual model lives in config/model_config.json
+# Default paths (test_cases/, config/, outputs/) match this repo's layout.

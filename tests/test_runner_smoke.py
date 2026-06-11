@@ -17,7 +17,7 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from qval.main import main  # noqa: E402
-from qval.utils.file_loader import OUTPUTS_DIR  # noqa: E402
+from qval.utils.file_loader import outputs_dir  # noqa: E402
 
 
 def test_mock_run_produces_complete_evidence_pack(tmp_path):
@@ -30,7 +30,7 @@ def test_mock_run_produces_complete_evidence_pack(tmp_path):
     assert exit_code in (0, 1)
 
     # Find the most recent evidence dir.
-    evidence_root = OUTPUTS_DIR / "evidence"
+    evidence_root = outputs_dir() / "evidence"
     runs = sorted([p for p in evidence_root.iterdir() if p.is_dir()])
     assert runs, "no evidence pack was created"
     latest = runs[-1]

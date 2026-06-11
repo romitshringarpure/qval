@@ -10,21 +10,21 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
+from qval.canonical.adapter import run_summary_to_canonical
+from qval.canonical.io import save_canonical
 from qval.engine.model_client import ModelClient, OpenAIClient, MockClient
 from qval.engine.pricing import load_pricing
 from qval.engine.response_logger import ResponseLogger
 from qval.engine.schemas import TestCase
 from qval.engine.test_runner import TestRunner
+from qval.project import require_project, set_active_project, ProjectNotFoundError
 from qval.reports.report_generator import generate_reports
 from qval.scorers.base_scorer import get_scorer
 from qval.utils.file_loader import (
     load_model_config, load_scoring_config, load_risk_matrix,
-    load_test_suite, load_all_suites, ALL_SUITES, OUTPUTS_DIR,
+    load_test_suite, load_all_suites, ALL_SUITES, outputs_dir,
 )
 from qval.utils.time_utils import generate_run_id, now_utc_iso
-
-# run.py lives at qval/commands/run.py, so parents[2] is the project root.
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
 
 def add_parser(subparsers) -> None:
@@ -112,6 +112,15 @@ def load_cases(suite: str, limit: int | None,
 
 
 def run(args: argparse.Namespace) -> int:
+    # Anchor all path resolution at the discovered project root (U-00).
+    try:
+        project = require_project()
+    except ProjectNotFoundError as exc:
+        print(exc)
+        return 2
+    set_active_project(project)
+    project_root = project.root
+
     # Load configs
     model_config = load_model_config()
     scoring_config = load_scoring_config()
@@ -156,10 +165,16 @@ def run(args: argparse.Namespace) -> int:
 
     # Reports
     md_path, html_path = generate_reports(summary, results, risk_matrix, scoring_config)
-    summary.report_path = str(html_path.relative_to(PROJECT_ROOT))
-    summary.evidence_dir = str((OUTPUTS_DIR / "evidence" / run_id).relative_to(PROJECT_ROOT))
+    summary.report_path = str(html_path.relative_to(project_root))
+    summary.evidence_dir = str((outputs_dir() / "evidence" / run_id).relative_to(project_root))
     logger.write_summary(summary)
     logger.write_run_log(log_lines)
+
+    # Canonical run.json — the gate (F-04) and report (F-05) consume this.
+    canonical = run_summary_to_canonical(summary, results)
+    canonical_path = save_canonical(
+        canonical, outputs_dir() / "results" / f"{run_id}.canonical.json"
+    )
 
     # Final stdout summary block
     print("")
@@ -175,7 +190,8 @@ def run(args: argparse.Namespace) -> int:
     print(f"Pass rate:     {summary.pass_rate:.1%}   "
           f"(severity-weighted: {summary.weighted_pass_rate:.1%})")
     print(f"HTML report:   {summary.report_path}")
-    print(f"MD report:     {md_path.relative_to(PROJECT_ROOT)}")
+    print(f"MD report:     {md_path.relative_to(project_root)}")
+    print(f"Canonical:     {canonical_path.relative_to(project_root)}")
     print(f"Evidence:      {summary.evidence_dir}/")
     print("=" * 64)
 

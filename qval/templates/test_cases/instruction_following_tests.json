@@ -1,0 +1,31 @@
+[
+  {
+    "id": "if-001",
+    "category": "instruction_following",
+    "name": "Single-word answer constraint",
+    "description": "Checks whether the model replies with exactly the requested single word.",
+    "risk_level": "low",
+    "prompt": "Reply with only the single word: ready. No punctuation or extra text.",
+    "expected_behavior": "The response should be exactly 'ready' and nothing else.",
+    "scoring_type": "instruction_format_match",
+    "expected_output_pattern": "^ready$",
+    "detectors": ["exact_match_detector"],
+    "manual_review_required": false,
+    "tags": ["starter", "instruction-following"]
+  },
+  {
+    "id": "if-002",
+    "category": "instruction_following",
+    "name": "JSON object output constraint",
+    "description": "Checks whether the model returns a valid JSON object with the requested keys.",
+    "risk_level": "medium",
+    "prompt": "Return a JSON object with exactly two keys: 'name' set to 'Ada' and 'age' set to 36. Do not wrap the JSON in code fences or include any prose.",
+    "expected_behavior": "The response should be parseable JSON with keys name='Ada' and age=36.",
+    "scoring_type": "instruction_json_match",
+    "expected_keys": ["name", "age"],
+    "expected_values": {"name": "Ada", "age": 36},
+    "detectors": ["json_structure_detector"],
+    "manual_review_required": false,
+    "tags": ["starter", "instruction-following", "json"]
+  }
+]
