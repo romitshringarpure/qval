@@ -6,6 +6,7 @@
     runs: [],
     selectedSuites: new Set(),
     activeRun: null,
+    selectedFindingId: null,
     reviewQueue: [],
     activeReviewIndex: 0,
     activeReviewRunId: "",
@@ -27,6 +28,19 @@
     el.replaceChildren();
   }
 
+  function fmtDate(iso) {
+    if (!iso) return "";
+    const date = new Date(iso);
+    if (Number.isNaN(date.getTime())) return iso;
+    return date.toLocaleString(undefined, {
+      month: "short", day: "numeric", hour: "2-digit", minute: "2-digit",
+    });
+  }
+
+  function fmtSuiteName(name) {
+    return String(name).replaceAll("_", " ");
+  }
+
   function api(path, options) {
     return fetch(path, options).then(async (resp) => {
       const payload = await resp.json().catch(() => ({}));
@@ -45,60 +59,18 @@
 
     await Promise.all([loadProject(), loadSuites(), loadRuns()]);
     renderSuites();
-    renderSuiteSelect();
+    renderSuitePicker();
+    updateRunSelectedLabel();
     renderRuns();
     renderRunPickers();
     bindKeyboardShortcuts();
   }
 
+  /* ---------- navigation ---------- */
+
   function bindNavigation() {
     document.querySelectorAll(".nav-button").forEach((button) => {
       button.addEventListener("click", () => showView(button.dataset.view));
-    });
-  }
-
-  function bindActions() {
-    $("#refresh-runs").addEventListener("click", loadRunsAndRender);
-    $("#run-selected").addEventListener("click", () => {
-      syncSuiteSelectFromState();
-      showView("runs");
-    });
-    $("#refresh-review").addEventListener("click", loadReviewQueue);
-    $("#review-run-select").addEventListener("change", () => {
-      setDefaultBaseline("review");
-      loadReviewQueue();
-    });
-    $("#review-baseline-select").addEventListener("change", loadReviewQueue);
-    $("#evaluate-gate").addEventListener("click", loadGate);
-    $("#signoff-run-select").addEventListener("change", () => {
-      setDefaultBaseline("signoff");
-      loadGate();
-    });
-    $("#signoff-baseline-select").addEventListener("change", loadGate);
-    $("#submit-decision").addEventListener("click", submitModalDecision);
-  }
-
-  function bindTargetControls() {
-    document.querySelectorAll('input[name="target-type"]').forEach((input) => {
-      input.addEventListener("change", updateTargetFields);
-    });
-    updateTargetFields();
-  }
-
-  function bindRunForm() {
-    $("#run-form").addEventListener("submit", async (event) => {
-      event.preventDefault();
-      try {
-        const payload = buildRunPayload();
-        const started = await api("/api/runs", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
-        showProgress(started.run_id);
-      } catch (err) {
-        showProgressError(err.message);
-      }
     });
   }
 
@@ -109,7 +81,44 @@
     document.querySelectorAll(".view").forEach((section) => {
       section.classList.toggle("active", section.id === `view-${view}`);
     });
+    // Make the workflow flow: entering a view loads what it needs.
+    if (view === "review" && $("#review-run-select").value && !state.reviewQueue.length) {
+      loadReviewQueue().catch(showTopError);
+    }
+    if (view === "signoff" && $("#signoff-run-select").value) {
+      loadGate().catch(showTopError);
+    }
   }
+
+  function showTopError(err) {
+    const main = $(".main");
+    const existing = main.querySelector(".error-state");
+    if (existing) existing.remove();
+    main.prepend(node("div", "error-state", err.message || String(err)));
+  }
+
+  function bindActions() {
+    $("#refresh-runs").addEventListener("click", loadRunsAndRender);
+    $("#run-selected").addEventListener("click", () => {
+      renderSuitePicker();
+      showView("runs");
+    });
+    $("#refresh-review").addEventListener("click", () => loadReviewQueue().catch(showTopError));
+    $("#review-run-select").addEventListener("change", () => {
+      setDefaultBaseline("review");
+      loadReviewQueue().catch(showTopError);
+    });
+    $("#review-baseline-select").addEventListener("change", () => loadReviewQueue().catch(showTopError));
+    $("#evaluate-gate").addEventListener("click", () => loadGate().catch(showTopError));
+    $("#signoff-run-select").addEventListener("change", () => {
+      setDefaultBaseline("signoff");
+      loadGate().catch(showTopError);
+    });
+    $("#signoff-baseline-select").addEventListener("change", () => loadGate().catch(showTopError));
+    $("#submit-decision").addEventListener("click", submitModalDecision);
+  }
+
+  /* ---------- data loading ---------- */
 
   async function loadProject() {
     const project = await api("/api/project");
@@ -133,178 +142,161 @@
     renderRunPickers();
   }
 
+  /* ---------- suite library ---------- */
+
+  function toggleSuite(name, checked) {
+    if (checked) state.selectedSuites.add(name);
+    else state.selectedSuites.delete(name);
+    renderSuites();
+    renderSuitePicker();
+    updateRunSelectedLabel();
+  }
+
+  function updateRunSelectedLabel() {
+    const count = state.selectedSuites.size;
+    $("#run-selected").textContent = count ? `Run selected (${count})` : "Run selected";
+    $("#run-selected").disabled = !count;
+  }
+
   function renderSuites() {
     const root = $("#suite-list");
     clear(root);
     if (!state.suites.length) {
-      root.appendChild(node("div", "empty-state", "No suites found."));
+      const empty = node("div", "empty-state");
+      empty.appendChild(node("strong", "", "No suites found."));
+      empty.appendChild(node("span", "", "Add *_tests.json files to your project's test_cases/ folder, or run qval init for starter suites."));
+      root.appendChild(empty);
       return;
     }
 
     state.suites.forEach((suite) => {
       const card = node("article", "suite-card");
+
       const header = node("div", "suite-card-header");
       const title = node("label", "suite-title");
       const checkbox = document.createElement("input");
       checkbox.type = "checkbox";
       checkbox.checked = state.selectedSuites.has(suite.name);
-      checkbox.addEventListener("change", () => {
-        if (checkbox.checked) state.selectedSuites.add(suite.name);
-        else state.selectedSuites.delete(suite.name);
-        syncSuiteSelectFromState();
-      });
-      title.append(checkbox, node("h2", "", suite.name));
-      header.append(title, node("span", "badge", `${suite.case_count} cases`));
+      checkbox.addEventListener("change", () => toggleSuite(suite.name, checkbox.checked));
+      title.append(checkbox, node("h3", "", fmtSuiteName(suite.name)));
+      header.append(title, node("span", "count-chip", `${suite.case_count} cases`));
       card.appendChild(header);
 
+      const sevCounts = {};
+      suite.cases.forEach((testCase) => {
+        sevCounts[testCase.severity] = (sevCounts[testCase.severity] || 0) + 1;
+      });
       const badges = node("div", "badge-row");
-      suite.severities.forEach((severity) => {
-        badges.appendChild(node("span", `badge severity-${severity}`, severity));
+      ["critical", "high", "medium", "low"].forEach((severity) => {
+        if (sevCounts[severity]) {
+          badges.appendChild(node("span", `chip sev-${severity}`, `${sevCounts[severity]} ${severity}`));
+        }
       });
-      suite.control_mappings.forEach((control) => {
-        badges.appendChild(node("span", "badge", control.control_id));
+      suite.control_mappings.slice(0, 4).forEach((control) => {
+        badges.appendChild(node("span", "chip chip-outline", control.control_id));
       });
+      if (suite.control_mappings.length > 4) {
+        badges.appendChild(node("span", "chip chip-outline", `+${suite.control_mappings.length - 4} controls`));
+      }
       card.appendChild(badges);
 
+      const details = document.createElement("details");
+      const summary = node("summary", "", `View cases (${suite.cases.length})`);
+      details.appendChild(summary);
       const cases = node("div", "case-list");
-      suite.cases.slice(0, 8).forEach((testCase) => {
-        cases.appendChild(renderSuiteCase(testCase));
+      let rendered = false;
+      details.addEventListener("toggle", () => {
+        if (!details.open || rendered) return;
+        rendered = true;
+        suite.cases.forEach((testCase) => cases.appendChild(renderSuiteCase(testCase)));
       });
-      if (suite.cases.length > 8) {
-        cases.appendChild(node("div", "case-meta", `${suite.cases.length - 8} more cases`));
-      }
-      card.appendChild(cases);
+      details.appendChild(cases);
+      card.appendChild(details);
+
       root.appendChild(card);
     });
   }
 
   function renderSuiteCase(testCase) {
     const row = node("div", "case-row");
-    const main = node("div", "case-main");
-    main.appendChild(node("div", "case-name", `${testCase.id} - ${testCase.name}`));
-    main.appendChild(node("div", "case-meta", testCase.description));
+    row.appendChild(node("div", "case-name", `${testCase.id} — ${testCase.name}`));
+    row.appendChild(node("div", "case-meta", testCase.description));
     const badges = node("div", "badge-row");
-    badges.appendChild(node("span", `badge severity-${testCase.severity}`, testCase.severity));
-    badges.appendChild(node("span", "badge", testCase.category));
+    badges.appendChild(node("span", `chip sev-${testCase.severity}`, testCase.severity));
+    badges.appendChild(node("span", "chip chip-outline", testCase.category));
     testCase.control_ids.forEach((controlId) => {
-      badges.appendChild(node("span", "badge", controlId));
+      badges.appendChild(node("span", "chip chip-outline", controlId));
     });
-    row.append(main, badges);
+    row.appendChild(badges);
     return row;
   }
 
-  function renderSuiteSelect() {
-    const select = $("#suite-select");
-    clear(select);
-    state.suites.forEach((suite) => {
-      const option = document.createElement("option");
-      option.value = suite.name;
-      option.textContent = suite.name;
-      option.selected = state.selectedSuites.has(suite.name);
-      select.appendChild(option);
-    });
-    select.addEventListener("change", () => {
-      state.selectedSuites = new Set(Array.from(select.selectedOptions).map((opt) => opt.value));
-      renderSuites();
-    });
-  }
+  /* ---------- run form ---------- */
 
-  function syncSuiteSelectFromState() {
-    Array.from($("#suite-select").options).forEach((option) => {
-      option.selected = state.selectedSuites.has(option.value);
-    });
-  }
-
-  function renderRuns() {
-    const root = $("#run-history");
+  function renderSuitePicker() {
+    const root = $("#suite-picker");
     clear(root);
-    if (!state.runs.length) {
-      root.appendChild(node("div", "empty-state", "No runs yet."));
-      return;
-    }
-    state.runs.forEach((run) => {
-      const button = node("button", "run-row");
-      button.type = "button";
-      button.addEventListener("click", () => loadRunDetail(run.run_id));
-      const main = node("div");
-      main.appendChild(node("div", "run-id", run.run_id));
-      main.appendChild(node("div", "run-meta", `${run.suite} - ${run.provider} / ${run.model}`));
-      const metrics = node(
-        "div",
-        "run-meta",
-        `${run.total_tests} tests, ${run.pass_count} passed, ${run.fail_count} failed`
-      );
-      button.append(main, metrics);
-      root.appendChild(button);
-    });
-  }
-
-  function renderRunPickers() {
-    const runSelects = [$("#review-run-select"), $("#signoff-run-select")];
-    runSelects.forEach((select) => {
-      const previous = select.value;
-      clear(select);
-      state.runs.forEach((run) => {
-        const option = document.createElement("option");
-        option.value = run.run_id;
-        option.textContent = `${run.run_id} - ${run.suite}`;
-        select.appendChild(option);
+    state.suites.forEach((suite) => {
+      const pill = node("label", "suite-pill");
+      const checkbox = document.createElement("input");
+      checkbox.type = "checkbox";
+      checkbox.checked = state.selectedSuites.has(suite.name);
+      pill.classList.toggle("checked", checkbox.checked);
+      checkbox.addEventListener("change", () => {
+        toggleSuite(suite.name, checkbox.checked);
       });
-      if (previous && Array.from(select.options).some((opt) => opt.value === previous)) {
-        select.value = previous;
-      }
+      pill.append(checkbox, node("span", "", fmtSuiteName(suite.name)));
+      root.appendChild(pill);
     });
-    renderBaselinePicker("review");
-    renderBaselinePicker("signoff");
-    setDefaultBaseline("review");
-    setDefaultBaseline("signoff");
   }
 
-  function renderBaselinePicker(scope) {
-    const runSelect = $(`#${scope}-run-select`);
-    const baselineSelect = $(`#${scope}-baseline-select`);
-    const previous = baselineSelect.value;
-    clear(baselineSelect);
-    const empty = document.createElement("option");
-    empty.value = "";
-    empty.textContent = "No baseline";
-    baselineSelect.appendChild(empty);
-    state.runs.forEach((run) => {
-      if (run.run_id === runSelect.value) return;
-      const option = document.createElement("option");
-      option.value = run.run_id;
-      option.textContent = `${run.run_id} - ${run.suite}`;
-      baselineSelect.appendChild(option);
-    });
-    if (previous && Array.from(baselineSelect.options).some((opt) => opt.value === previous)) {
-      baselineSelect.value = previous;
-    }
-  }
+  const TARGET_HINTS = {
+    mock: "Offline mock provider — deterministic, no API key needed.",
+    provider: "Calls the model API. The key is read from your environment (.env).",
+    http: "Tests any HTTP service that wraps an AI — your internal chatbot, an API, a gateway.",
+  };
 
-  function setDefaultBaseline(scope) {
-    renderBaselinePicker(scope);
-    const runSelect = $(`#${scope}-run-select`);
-    const baselineSelect = $(`#${scope}-baseline-select`);
-    if (!runSelect.value || baselineSelect.value) return;
-    const current = state.runs.find((run) => run.run_id === runSelect.value);
-    const prior = state.runs.find((run) => (
-      run.run_id !== runSelect.value && current && run.suite === current.suite
-    ));
-    if (prior) baselineSelect.value = prior.run_id;
+  function bindTargetControls() {
+    document.querySelectorAll('input[name="target-type"]').forEach((input) => {
+      input.addEventListener("change", updateTargetFields);
+    });
+    updateTargetFields();
   }
 
   function updateTargetFields() {
     const type = targetType();
     $("#provider-fields").classList.toggle("hidden", type !== "provider");
     $("#http-fields").classList.toggle("hidden", type !== "http");
+    $("#target-hint").textContent = TARGET_HINTS[type] || "";
+    document.querySelectorAll("#target-segment label").forEach((label) => {
+      const input = label.querySelector("input");
+      label.classList.toggle("checked", input && input.checked);
+    });
   }
 
   function targetType() {
     return document.querySelector('input[name="target-type"]:checked').value;
   }
 
+  function bindRunForm() {
+    $("#run-form").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      try {
+        const payload = buildRunPayload();
+        const started = await api("/api/runs", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        showProgress(started.run_id);
+      } catch (err) {
+        showProgressError(err.message);
+      }
+    });
+  }
+
   function buildRunPayload() {
-    const suites = Array.from($("#suite-select").selectedOptions).map((opt) => opt.value);
+    const suites = Array.from(state.selectedSuites);
     if (!suites.length) {
       throw new Error("Select at least one suite.");
     }
@@ -347,13 +339,15 @@
     return target;
   }
 
+  /* ---------- progress ---------- */
+
   function showProgress(runId) {
     const panel = $("#progress-panel");
     panel.classList.remove("hidden");
-    $("#progress-status").textContent = `Run ${runId}`;
-    $("#progress-count").textContent = "queued";
+    $("#progress-status").textContent = "Starting…";
+    $("#progress-count").textContent = "";
     $("#progress-bar").style.width = "0%";
-    $("#progress-case").textContent = "";
+    $("#progress-case").textContent = runId;
 
     if (state.pollTimer) window.clearInterval(state.pollTimer);
     state.pollTimer = window.setInterval(() => pollProgress(runId), 600);
@@ -375,8 +369,14 @@
       const total = progress.total || 0;
       const completed = progress.completed || 0;
       const percent = total ? Math.round((completed / total) * 100) : 0;
-      $("#progress-status").textContent = progress.status;
-      $("#progress-count").textContent = total ? `${completed}/${total}` : "";
+      const statusLabel = {
+        queued: "Queued",
+        running: "Running…",
+        completed: "Completed",
+        failed: "Failed",
+      }[progress.status] || progress.status;
+      $("#progress-status").textContent = statusLabel;
+      $("#progress-count").textContent = total ? `${completed} / ${total}` : "";
       $("#progress-bar").style.width = `${percent}%`;
       $("#progress-case").textContent = progress.current_case_id
         ? `Current case: ${progress.current_case_id}`
@@ -396,11 +396,119 @@
     }
   }
 
+  /* ---------- run history ---------- */
+
+  function statbar(pass, review, fail, total) {
+    const bar = node("div", "statbar");
+    const denominator = total || pass + review + fail || 1;
+    [["sb-pass", pass], ["sb-rev", review], ["sb-fail", fail]].forEach(([cls, count]) => {
+      if (!count) return;
+      const span = node("span", cls);
+      span.style.width = `${(count / denominator) * 100}%`;
+      bar.appendChild(span);
+    });
+    return bar;
+  }
+
+  function renderRuns() {
+    const root = $("#run-history");
+    clear(root);
+    if (!state.runs.length) {
+      const empty = node("div", "empty-state");
+      empty.appendChild(node("strong", "", "No runs yet."));
+      empty.appendChild(node("span", "", "Pick your suites, keep the Mock target, and press Start run — it works offline, no API key needed."));
+      root.appendChild(empty);
+      return;
+    }
+    state.runs.forEach((run) => {
+      const button = node("button", "run-row");
+      button.type = "button";
+      button.addEventListener("click", () => loadRunDetail(run.run_id).catch(showTopError));
+
+      const top = node("div", "run-row-top");
+      top.appendChild(node("span", "run-id", run.run_id));
+      top.appendChild(node("span", "run-date", fmtDate(run.started_at || run.completed_at)));
+      button.appendChild(top);
+
+      button.appendChild(node("div", "run-meta",
+        `${fmtSuiteName(run.suite)} · ${run.provider}${run.model ? ` / ${run.model}` : ""}`));
+
+      const bottom = node("div", "run-row-bottom");
+      bottom.appendChild(statbar(run.pass_count, run.needs_review_count, run.fail_count, run.total_tests));
+      const rate = node("span", "run-rate", `${Math.round((run.pass_rate || 0) * 100)}%`);
+      bottom.appendChild(rate);
+      button.appendChild(bottom);
+
+      button.appendChild(node("div", "run-counts",
+        `${run.total_tests} tests · ${run.pass_count} passed · ${run.fail_count} failed · ${run.needs_review_count} need review`));
+
+      root.appendChild(button);
+    });
+  }
+
+  function renderRunPickers() {
+    const runSelects = [$("#review-run-select"), $("#signoff-run-select")];
+    runSelects.forEach((select) => {
+      const previous = select.value;
+      clear(select);
+      state.runs.forEach((run) => {
+        const option = document.createElement("option");
+        option.value = run.run_id;
+        option.textContent = `${run.run_id} — ${fmtSuiteName(run.suite)}`;
+        select.appendChild(option);
+      });
+      if (previous && Array.from(select.options).some((opt) => opt.value === previous)) {
+        select.value = previous;
+      }
+    });
+    renderBaselinePicker("review");
+    renderBaselinePicker("signoff");
+    setDefaultBaseline("review");
+    setDefaultBaseline("signoff");
+  }
+
+  function renderBaselinePicker(scope) {
+    const runSelect = $(`#${scope}-run-select`);
+    const baselineSelect = $(`#${scope}-baseline-select`);
+    const previous = baselineSelect.value;
+    clear(baselineSelect);
+    const empty = document.createElement("option");
+    empty.value = "";
+    empty.textContent = "No baseline";
+    baselineSelect.appendChild(empty);
+    state.runs.forEach((run) => {
+      if (run.run_id === runSelect.value) return;
+      const option = document.createElement("option");
+      option.value = run.run_id;
+      option.textContent = `${run.run_id} — ${fmtSuiteName(run.suite)}`;
+      baselineSelect.appendChild(option);
+    });
+    if (previous && Array.from(baselineSelect.options).some((opt) => opt.value === previous)) {
+      baselineSelect.value = previous;
+    }
+  }
+
+  function setDefaultBaseline(scope) {
+    renderBaselinePicker(scope);
+    const runSelect = $(`#${scope}-run-select`);
+    const baselineSelect = $(`#${scope}-baseline-select`);
+    if (!runSelect.value || baselineSelect.value) return;
+    const current = state.runs.find((run) => run.run_id === runSelect.value);
+    const prior = state.runs.find((run) => (
+      run.run_id !== runSelect.value && current && run.suite === current.suite
+    ));
+    if (prior) baselineSelect.value = prior.run_id;
+  }
+
+  /* ---------- run detail ---------- */
+
   async function loadRunDetail(runId) {
     const detail = await api(`/api/runs/${encodeURIComponent(runId)}`);
     state.activeRun = detail;
+    state.selectedFindingId = null;
     state.filters = { status: "all", category: "all" };
     renderRunDetail();
+    $("#run-detail").scrollIntoView({ behavior: "smooth", block: "nearest" });
   }
 
   function renderRunDetail() {
@@ -412,17 +520,35 @@
 
     const header = node("div", "detail-toolbar");
     const title = node("div");
-    title.appendChild(node("h2", "", run.run_id));
-    title.appendChild(node("p", "", `${run.suite} - ${run.provider} / ${run.model}`));
+    title.appendChild(node("h3", "", run.run_id));
+    title.appendChild(node("p", "", `${fmtSuiteName(run.suite)} · ${run.provider}${run.model ? ` / ${run.model}` : ""}`));
     header.appendChild(title);
     header.appendChild(renderFilters(run));
     root.appendChild(header);
+
+    const counts = { passed: 0, failed: 0, needs_review: 0 };
+    run.findings.forEach((finding) => {
+      if (finding.status in counts) counts[finding.status] += 1;
+    });
+    const barWrap = node("div");
+    barWrap.style.marginTop = "12px";
+    barWrap.appendChild(statbar(counts.passed, counts.needs_review, counts.failed, run.findings.length));
+    const legend = node("div", "stat-legend");
+    [["#22c55e", `${counts.passed} passed`], ["#8b5cf6", `${counts.needs_review} need review`], ["#ef4444", `${counts.failed} failed`]].forEach(([color, label]) => {
+      const item = node("span");
+      const swatch = node("i");
+      swatch.style.background = color;
+      item.append(swatch, document.createTextNode(label));
+      legend.appendChild(item);
+    });
+    barWrap.appendChild(legend);
+    root.appendChild(barWrap);
 
     const findings = filteredFindings(run);
     const table = node("table", "findings-table");
     const thead = document.createElement("thead");
     const headerRow = document.createElement("tr");
-    ["Case", "Status", "Severity", "Category", "Score", "Reason"].forEach((label) => {
+    ["Case", "Status", "Severity", "Category", "Reason"].forEach((label) => {
       headerRow.appendChild(node("th", "", label));
     });
     thead.appendChild(headerRow);
@@ -432,20 +558,31 @@
     findings.forEach((finding) => {
       const testCase = caseForFinding(run, finding);
       const row = document.createElement("tr");
-      row.appendChild(node("td", "", `${finding.case_id} - ${testCase ? testCase.name : ""}`));
-      row.appendChild(node("td", `status-${finding.status}`, finding.status));
-      row.appendChild(node("td", `severity-${finding.severity}`, finding.severity));
+      row.classList.toggle("selected", finding.finding_id === state.selectedFindingId);
+      const caseCell = node("td");
+      caseCell.appendChild(node("div", "case-name", finding.case_id));
+      if (testCase) caseCell.appendChild(node("div", "case-meta", testCase.name));
+      row.appendChild(caseCell);
+      const statusCell = node("td");
+      statusCell.appendChild(node("span", `chip st-${finding.status}`, finding.status.replace("_", " ")));
+      row.appendChild(statusCell);
+      const severityCell = node("td");
+      severityCell.appendChild(node("span", `chip sev-${finding.severity}`, finding.severity));
+      row.appendChild(severityCell);
       row.appendChild(node("td", "", testCase ? testCase.category : ""));
-      row.appendChild(node("td", "", finding.score === null ? "" : finding.score));
       row.appendChild(node("td", "", finding.reason));
-      row.addEventListener("click", () => renderDrawer(root, run, finding));
+      row.addEventListener("click", () => {
+        state.selectedFindingId = finding.finding_id;
+        renderRunDetail();
+      });
       tbody.appendChild(row);
     });
     table.appendChild(tbody);
     root.appendChild(table);
 
-    if (findings.length) {
-      renderDrawer(root, run, findings[0]);
+    const selected = findings.find((finding) => finding.finding_id === state.selectedFindingId) || findings[0];
+    if (selected) {
+      renderDrawer(root, run, selected);
     }
   }
 
@@ -474,7 +611,7 @@
     values.forEach((value) => {
       const option = document.createElement("option");
       option.value = value;
-      option.textContent = value;
+      option.textContent = value === "all" ? "All" : value.replace("_", " ");
       option.selected = value === selected;
       select.appendChild(option);
     });
@@ -497,7 +634,13 @@
 
     const testCase = caseForFinding(run, finding);
     const drawer = node("section", "drawer");
-    drawer.appendChild(node("h3", "", testCase ? testCase.name : finding.case_id));
+    const head = node("div", "detail-toolbar");
+    head.appendChild(node("h3", "", testCase ? `${finding.case_id} — ${testCase.name}` : finding.case_id));
+    const chips = node("div", "badge-row");
+    chips.appendChild(node("span", `chip st-${finding.status}`, finding.status.replace("_", " ")));
+    chips.appendChild(node("span", `chip sev-${finding.severity}`, finding.severity));
+    head.appendChild(chips);
+    drawer.appendChild(head);
 
     const grid = node("div", "drawer-grid");
     grid.appendChild(preBlock("Prompt", testCase ? testCase.prompt : ""));
@@ -515,10 +658,12 @@
     root.appendChild(drawer);
   }
 
+  /* ---------- review queue ---------- */
+
   async function loadReviewQueue() {
     const runId = $("#review-run-select").value;
     if (!runId) {
-      renderReviewEmpty("No run selected.");
+      renderReviewEmpty("Run a suite first — findings that need human judgment will queue here.");
       return;
     }
     const baseline = $("#review-baseline-select").value;
@@ -533,16 +678,23 @@
   function renderReviewEmpty(message) {
     clear($("#review-queue"));
     clear($("#review-detail"));
+    $("#review-count").textContent = "";
     $("#review-queue").appendChild(node("div", "empty-state", message));
   }
 
   function renderReviewQueue() {
     const list = $("#review-queue");
     clear(list);
+    $("#review-count").textContent = state.reviewQueue.length
+      ? `${state.reviewQueue.length} to review`
+      : "";
     if (!state.reviewQueue.length) {
-      list.appendChild(node("div", "empty-state", "No NEEDS_REVIEW findings."));
+      const empty = node("div", "empty-state");
+      empty.appendChild(node("strong", "", "Queue clear."));
+      empty.appendChild(node("span", "", "No NEEDS_REVIEW findings in this run — head to Sign-off for the gate decision."));
+      list.appendChild(empty);
       clear($("#review-detail"));
-      $("#review-detail").appendChild(node("div", "empty-state", "Select another run or baseline."));
+      $("#review-detail").appendChild(node("div", "empty-state", "Nothing to adjudicate."));
       return;
     }
 
@@ -551,10 +703,11 @@
       button.type = "button";
       button.classList.toggle("active", index === state.activeReviewIndex);
       button.addEventListener("click", () => selectReviewIndex(index));
-      const title = node("div", "case-name", `${item.finding_id} - ${item.name}`);
-      const meta = node("div", "case-meta", item.category);
-      const chip = node("span", `badge severity-${item.severity}`, item.severity);
-      button.append(title, meta, chip);
+      const top = node("div", "review-item-top");
+      top.appendChild(node("span", "case-name", item.finding_id));
+      top.appendChild(node("span", `chip sev-${item.severity}`, item.severity));
+      button.appendChild(top);
+      button.appendChild(node("div", "case-meta", `${item.name} · ${item.category}`));
       list.appendChild(button);
     });
     renderReviewDetail();
@@ -577,12 +730,16 @@
 
     const header = node("div", "detail-toolbar");
     const title = node("div");
-    title.appendChild(node("h2", "", item.name));
-    title.appendChild(node("p", "", `${item.finding_id} - ${item.status}`));
+    title.appendChild(node("h3", "", item.name));
+    const meta = node("div", "badge-row");
+    meta.appendChild(node("span", "chip chip-outline", item.finding_id));
+    meta.appendChild(node("span", `chip sev-${item.severity}`, item.severity));
+    meta.appendChild(node("span", `chip st-${item.status}`, String(item.status).replace("_", " ")));
+    title.appendChild(meta);
     const actions = node("div", "action-row");
-    actions.appendChild(decisionButton("Approve", "approve"));
-    actions.appendChild(decisionButton("Reject", "reject"));
-    actions.appendChild(decisionButton("Waive", "waive"));
+    actions.appendChild(decisionButton("Approve", "approve", "primary-button"));
+    actions.appendChild(decisionButton("Reject", "reject", "danger-button"));
+    actions.appendChild(decisionButton("Waive…", "waive", "warn-button"));
     header.append(title, actions);
     root.appendChild(header);
 
@@ -594,14 +751,22 @@
     root.appendChild(grid);
 
     if (item.judge && (item.judge.rationale || item.judge.confidence !== undefined)) {
-      const judge = preBlock(
-        "Judge assist",
-        `${item.judge.suggestion || "suggestion"} confidence=${item.judge.confidence ?? ""}\n${item.judge.rationale || ""}`
-      );
+      const judge = node("div", "judge-block");
+      judge.appendChild(node("div", "muted-label", "Judge assist (advisory — your call is final)"));
+      const suggestion = node("div", "case-name",
+        `Suggests: ${item.judge.suggestion || "—"}${item.judge.confidence !== undefined ? ` · confidence ${item.judge.confidence}` : ""}`);
+      suggestion.style.marginTop = "6px";
+      judge.appendChild(suggestion);
+      if (item.judge.rationale) {
+        judge.appendChild(node("div", "case-meta", item.judge.rationale));
+      }
       root.appendChild(judge);
     }
 
     if (item.baseline && item.baseline.response) {
+      const compareTitle = node("h3", "", "Baseline comparison");
+      compareTitle.style.marginTop = "14px";
+      root.appendChild(compareTitle);
       const compare = node("div", "drawer-grid");
       compare.appendChild(preBlock("Baseline response", item.baseline.response));
       compare.appendChild(preBlock("Current response", item.finding.response || ""));
@@ -609,12 +774,12 @@
     }
   }
 
-  function decisionButton(label, decision) {
-    const button = node("button", decision === "approve" ? "primary-button" : "secondary-button", label);
+  function decisionButton(label, decision, cls) {
+    const button = node("button", cls, label);
     button.type = "button";
     button.addEventListener("click", () => {
       if (decision === "waive") openDecisionModal(decision);
-      else submitDecision(decision, "");
+      else submitDecision(decision, "").catch(showTopError);
     });
     return button;
   }
@@ -642,10 +807,13 @@
   function openDecisionModal(decision) {
     const modal = $("#decision-modal");
     $("#decision-kind").value = decision;
-    $("#decision-title").textContent = `${decision[0].toUpperCase()}${decision.slice(1)} finding`;
+    $("#decision-title").textContent = decision === "waive"
+      ? "Waive finding (ship with documented exception)"
+      : `${decision[0].toUpperCase()}${decision.slice(1)} finding`;
     $("#decision-reviewer").value = reviewerName();
     $("#decision-notes").value = "";
     $("#decision-expiry").value = "";
+    $("#decision-expiry-wrap").classList.toggle("hidden", decision !== "waive");
     modal.showModal();
   }
 
@@ -653,8 +821,12 @@
     const decision = $("#decision-kind").value;
     const reviewer = $("#decision-reviewer").value.trim();
     if (reviewer) $("#reviewer-name").value = reviewer;
-    await submitDecision(decision, $("#decision-notes").value, $("#decision-expiry").value);
-    $("#decision-modal").close();
+    try {
+      await submitDecision(decision, $("#decision-notes").value, $("#decision-expiry").value);
+      $("#decision-modal").close();
+    } catch (err) {
+      showTopError(err);
+    }
   }
 
   function bindKeyboardShortcuts() {
@@ -671,16 +843,18 @@
         selectReviewIndex(state.activeReviewIndex - 1);
       } else if (event.key === "a") {
         event.preventDefault();
-        submitDecision("approve", "");
+        submitDecision("approve", "").catch(showTopError);
       } else if (event.key === "r") {
         event.preventDefault();
-        submitDecision("reject", "");
+        submitDecision("reject", "").catch(showTopError);
       } else if (event.key === "w") {
         event.preventDefault();
         openDecisionModal("waive");
       }
     });
   }
+
+  /* ---------- sign-off ---------- */
 
   async function loadGate() {
     const runId = $("#signoff-run-select").value;
@@ -701,30 +875,42 @@
       return;
     }
 
-    const banner = node("div", `decision-banner decision-${gate.decision.verdict.toLowerCase().replace(/[^a-z]/g, "")}`);
-    banner.appendChild(node("h2", "", gate.blocked_by_reviews ? "Review required before sign-off" : gate.decision.verdict));
-    banner.appendChild(node("p", "", gate.blocked_by_reviews
-      ? `${gate.unresolved_review_count} unresolved review item(s).`
-      : `Policy ${gate.policy_version}`));
+    let banner;
     if (gate.blocked_by_reviews) {
-      const link = node("button", "secondary-button", "Open Review Queue");
+      banner = node("div", "decision-banner decision-review");
+      const text = node("div");
+      text.appendChild(node("div", "verdict-word", "Review required"));
+      text.appendChild(node("p", "", `${gate.unresolved_review_count} finding(s) need a human decision before this release can be signed off.`));
+      banner.appendChild(text);
+      const link = node("button", "secondary-button spacer", "Open Review Queue");
       link.type = "button";
       link.addEventListener("click", () => showView("review"));
       banner.appendChild(link);
+    } else {
+      const verdict = gate.decision.verdict;
+      banner = node("div", `decision-banner decision-${verdict.toLowerCase().replace(/[^a-z]/g, "")}`);
+      const text = node("div");
+      text.appendChild(node("div", "verdict-word", verdict));
+      text.appendChild(node("p", "", `Evaluated against policy ${gate.policy_version}`));
+      banner.appendChild(text);
     }
     root.appendChild(banner);
 
-    root.appendChild(listBlock("Triggering Rules", gate.triggering_policy_rules));
-    root.appendChild(listBlock("Policy Source", gate.policy_rules));
+    root.appendChild(listBlock("Why", gate.triggering_policy_rules, "No policy rules were triggered."));
+    root.appendChild(listBlock("Policy rules evaluated", gate.policy_rules, "No rules in policy."));
     root.appendChild(renderRegressionTable(gate.regressions || []));
     root.appendChild(renderExportButtons());
   }
 
-  function listBlock(title, values) {
+  function listBlock(title, values, emptyText) {
     const wrap = node("section", "subsection");
     wrap.appendChild(node("h3", "", title));
+    if (!values || !values.length) {
+      wrap.appendChild(node("div", "case-meta", emptyText || "None"));
+      return wrap;
+    }
     const list = document.createElement("ul");
-    (values && values.length ? values : ["None"]).forEach((value) => {
+    values.forEach((value) => {
       list.appendChild(node("li", "", value));
     });
     wrap.appendChild(list);
@@ -733,9 +919,9 @@
 
   function renderRegressionTable(regressions) {
     const wrap = node("section", "subsection");
-    wrap.appendChild(node("h3", "", "Regressions"));
+    wrap.appendChild(node("h3", "", "Regressions vs baseline"));
     if (!regressions.length) {
-      wrap.appendChild(node("div", "empty-state", "No regressions."));
+      wrap.appendChild(node("div", "case-meta", "No regressions against the selected baseline."));
       return wrap;
     }
     const table = node("table", "findings-table");
@@ -749,8 +935,11 @@
       const row = document.createElement("tr");
       row.appendChild(node("td", "", regression.type));
       row.appendChild(node("td", "", regression.case_id));
-      row.appendChild(node("td", `severity-${regression.severity || regression.to_severity}`, regression.severity || regression.to_severity));
-      row.appendChild(node("td", "", regression.reason || `${regression.from_status} -> ${regression.to_status}`));
+      const severity = regression.severity || regression.to_severity;
+      const sevCell = node("td");
+      sevCell.appendChild(node("span", `chip sev-${severity}`, severity));
+      row.appendChild(sevCell);
+      row.appendChild(node("td", "", regression.reason || `${regression.from_status} → ${regression.to_status}`));
       tbody.appendChild(row);
     });
     table.appendChild(tbody);
@@ -762,10 +951,10 @@
     const wrap = node("section", "subsection");
     wrap.appendChild(node("h3", "", "Export"));
     const row = node("div", "action-row");
-    ["html", "markdown", "evidence-pack"].forEach((fmt) => {
-      const button = node("button", "secondary-button", fmt);
+    [["HTML report", "html"], ["Markdown report", "markdown"], ["Evidence pack", "evidence-pack"]].forEach(([label, fmt]) => {
+      const button = node("button", "secondary-button", label);
       button.type = "button";
-      button.addEventListener("click", () => exportGate(fmt, wrap));
+      button.addEventListener("click", () => exportGate(fmt, wrap).catch(showTopError));
       row.appendChild(button);
     });
     wrap.appendChild(row);
@@ -786,6 +975,8 @@
     }
     status.textContent = result.file_path;
   }
+
+  /* ---------- shared bits ---------- */
 
   function preBlock(label, text) {
     const wrap = node("div");
@@ -836,10 +1027,6 @@
   }
 
   document.addEventListener("DOMContentLoaded", () => {
-    init().catch((err) => {
-      const main = $(".main");
-      const error = node("div", "error-state", err.message);
-      main.prepend(error);
-    });
+    init().catch(showTopError);
   });
 })();
