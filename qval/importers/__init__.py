@@ -14,6 +14,7 @@ from .registry import register, get_importer, available_tools
 
 # Import concrete importers so they self-register with the registry.
 from . import promptfoo  # noqa: F401
+from . import deepeval   # noqa: F401
 
 __all__ = [
     "BaseImporter",

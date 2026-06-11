@@ -13,10 +13,12 @@ dependencies = [
     "openai>=1.40.0",
     "requests>=2.31.0",
     "pyyaml>=6.0",
+    "cryptography>=41.0",
 ]
 
 [project.optional-dependencies]
 dev = ["pytest>=7.0"]
+ui = ["flask"]
 
 [project.scripts]
 qval = "qval.cli:main"
@@ -25,4 +27,9 @@ qval = "qval.cli:main"
 include = ["qval*"]
 
 [tool.setuptools.package-data]
-qval = ["templates/**/*"]
+qval = ["templates/**/*", "ui/templates/**/*", "ui/static/**/*"]
+
+[tool.pytest.ini_options]
+markers = [
+    "slow: marks tests as slow",
+]

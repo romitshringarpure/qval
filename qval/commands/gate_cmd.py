@@ -7,10 +7,12 @@ NO-GO -> 1, otherwise 0; input errors -> 2.
 from __future__ import annotations
 
 import argparse
-
-from qval.canonical import ALL_SEVERITIES, DECISION_NO_GO
+from qval.canonical import DECISION_NO_GO
 from qval.canonical.io import load_canonical, save_canonical
-from qval.gate import diff_runs, evaluate, GateThresholds
+from qval.gate import (
+    diff_runs, evaluate, PolicyError,
+)
+from qval.gate.service import resolve_policy
 
 
 def add_parser(subparsers) -> None:
@@ -27,18 +29,29 @@ def add_parser(subparsers) -> None:
                           "absolute current state (first release).")
     sub.add_argument("--out", default=None,
                      help="Write the current run with the decision attached here.")
+    sub.add_argument("--policy", default=None,
+                     help="Path to a policy.yaml (F-06). Default: auto-discover a "
+                          "policy.yaml at/above the cwd, else built-in rules.")
+    sub.add_argument("--no-policy", action="store_true",
+                     help="Ignore any policy file; use built-in rules.")
     sub.add_argument("--min-pass-rate", type=float, default=None,
-                     help="Fail (NO-GO) if current pass-rate is below this (0-1).")
+                     help="Fail (NO-GO) if current pass-rate is below this (0-1). "
+                          "Overrides the policy.")
     sub.add_argument("--block-severity", default=None,
                      help="Comma-separated severities whose NEW failures block. "
-                          "Default: critical,high.")
+                          "Overrides the policy. Default: critical,high.")
     sub.set_defaults(func=run)
 
 
 def run(args: argparse.Namespace) -> int:
     try:
-        thresholds = _thresholds_from_args(args)
-    except ValueError as e:
+        thresholds, policy_version, _policy_path = resolve_policy(
+            policy=args.policy,
+            no_policy=args.no_policy,
+            min_pass_rate=args.min_pass_rate,
+            block_severity=args.block_severity,
+        )
+    except (ValueError, PolicyError) as e:
         print(f"qval gate: {e}")
         return 2
 
@@ -50,7 +63,7 @@ def run(args: argparse.Namespace) -> int:
         return 2
 
     diff = diff_runs(baseline, current)
-    decision = evaluate(diff, thresholds)
+    decision = evaluate(diff, thresholds, policy_version=policy_version)
     _print_decision(decision)
 
     if args.out:
@@ -59,20 +72,6 @@ def run(args: argparse.Namespace) -> int:
         print(f"\nGated run written to {args.out}")
 
     return 1 if decision.verdict == DECISION_NO_GO else 0
-
-
-def _thresholds_from_args(args: argparse.Namespace) -> GateThresholds:
-    kwargs: dict = {}
-    if args.block_severity is not None:
-        sevs = frozenset(s.strip() for s in args.block_severity.split(",") if s.strip())
-        bad = sevs - set(ALL_SEVERITIES)
-        if bad:
-            raise ValueError(f"invalid --block-severity {sorted(bad)}; "
-                             f"choose from {ALL_SEVERITIES}")
-        kwargs["block_new_severities"] = sevs
-    if args.min_pass_rate is not None:
-        kwargs["min_pass_rate"] = args.min_pass_rate
-    return GateThresholds(**kwargs)
 
 
 def _print_decision(decision) -> None:

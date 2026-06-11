@@ -1,0 +1,58 @@
+{
+  "_about": "Governance control catalog (F-07). Maps Qval test categories to OWASP-LLM Top-10 (2025) and NIST AI RMF trustworthiness characteristics so findings carry control_ids and reports render a coverage matrix. Edit category_controls to match your control framework.",
+  "_frameworks": {
+    "OWASP-LLM": "OWASP Top 10 for LLM Applications (2025)",
+    "NIST-AI-RMF": "NIST AI Risk Management Framework — trustworthiness characteristics"
+  },
+  "controls": {
+    "OWASP-LLM-01": {
+      "framework": "OWASP-LLM",
+      "title": "Prompt Injection",
+      "owner": "AI Security",
+      "evidence_required": true
+    },
+    "OWASP-LLM-02": {
+      "framework": "OWASP-LLM",
+      "title": "Sensitive Information Disclosure",
+      "owner": "Privacy",
+      "evidence_required": true,
+      "waiver_allowed": false
+    },
+    "OWASP-LLM-05": {
+      "framework": "OWASP-LLM",
+      "title": "Improper Output Handling",
+      "owner": "AI Safety",
+      "evidence_required": true
+    },
+    "OWASP-LLM-09": {
+      "framework": "OWASP-LLM",
+      "title": "Misinformation",
+      "owner": "AI Quality",
+      "evidence_required": true
+    },
+    "NIST-AI-RMF-SAFE": {
+      "framework": "NIST-AI-RMF",
+      "title": "Safe",
+      "owner": "Responsible AI"
+    },
+    "NIST-AI-RMF-FAIR": {
+      "framework": "NIST-AI-RMF",
+      "title": "Fair — Harmful Bias Managed",
+      "owner": "Responsible AI"
+    },
+    "NIST-AI-RMF-VALID": {
+      "framework": "NIST-AI-RMF",
+      "title": "Valid & Reliable",
+      "owner": "AI Quality"
+    }
+  },
+  "category_controls": {
+    "safety": ["OWASP-LLM-05", "NIST-AI-RMF-SAFE"],
+    "toxicity": ["OWASP-LLM-05", "NIST-AI-RMF-SAFE"],
+    "instruction_following": ["OWASP-LLM-01"],
+    "robustness": ["OWASP-LLM-01"],
+    "privacy": ["OWASP-LLM-02"],
+    "hallucination": ["OWASP-LLM-09", "NIST-AI-RMF-VALID"],
+    "bias": ["NIST-AI-RMF-FAIR"]
+  }
+}

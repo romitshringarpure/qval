@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>qval — Updated Feature Spec · OSS-First (QA Strategy) · with Claude Code prompts</title>
+<style>
+  :root{--fg:#0f172a;--muted:#475569;--border:#e2e8f0;--bg:#f8fafc;--card:#fff;--accent:#2563eb;--done-bg:#dcfce7;--done-fg:#166534;--next-bg:#fef3c7;--next-fg:#92400e;--later-bg:#e2e8f0;--later-fg:#475569;--flag-bg:#fee2e2;--flag-fg:#991b1b;--p2-bg:#ede9fe;--p2-fg:#5b21b6;}
+  *{box-sizing:border-box;}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--fg);background:var(--bg);margin:0;padding:32px;line-height:1.55;}
+  .wrap{max-width:960px;margin:0 auto;}
+  h1{font-size:30px;margin:0 0 4px;}
+  h2{font-size:21px;margin:34px 0 12px;padding-bottom:6px;border-bottom:2px solid var(--border);}
+  .subtitle{color:var(--muted);margin-bottom:8px;font-size:16px;}
+  .meta{color:var(--muted);font-size:13px;margin-bottom:16px;}
+  .hero-box{border:2px solid var(--accent);border-radius:10px;padding:12px 15px;margin:14px 0;background:#eff6ff;font-size:14px;}
+  .hero-box strong{color:#1e3a8a;}
+  .decision-box{border:2px solid #16a34a;border-radius:10px;padding:12px 15px;margin:14px 0;background:#f0fdf4;font-size:14px;}
+  .decision-box strong{color:#166534;}
+  .howto{border:1px dashed var(--muted);border-radius:10px;padding:12px 15px;margin:14px 0;background:#fffbeb;font-size:13.5px;color:#374151;}
+  .feat{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px 18px;margin-bottom:14px;}
+  .feat h3{margin:0 0 2px;font-size:17px;}
+  .feat h3 .id{font-family:ui-monospace,Menlo,monospace;color:var(--accent);}
+  .badges{margin:4px 0 10px;}
+  .pill{display:inline-block;padding:1px 9px;border-radius:999px;font-size:11px;font-weight:600;margin-right:6px;vertical-align:middle;}
+  .pill-done{background:var(--done-bg);color:var(--done-fg);}
+  .pill-next{background:var(--next-bg);color:var(--next-fg);}
+  .pill-later{background:var(--later-bg);color:var(--later-fg);}
+  .pill-flag{background:var(--flag-bg);color:var(--flag-fg);}
+  .pill-p2{background:var(--p2-bg);color:var(--p2-fg);}
+  .pill-meta{background:#f1f5f9;color:#475569;font-weight:500;}
+  .feat h4{font-size:13px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin:14px 0 4px;}
+  .feat ul{margin:4px 0 4px 18px;padding:0;}
+  .feat li{margin-bottom:4px;font-size:14px;}
+  .feat p{margin:4px 0;font-size:14px;}
+  code{font-family:ui-monospace,Menlo,monospace;font-size:0.9em;background:#f1f5f9;padding:1px 4px;border-radius:4px;}
+  details.prompt{margin-top:12px;border:1px solid #cbd5e1;border-radius:8px;background:#0f172a;}
+  details.prompt summary{cursor:pointer;padding:8px 12px;font-size:13px;font-weight:600;color:#93c5fd;list-style:none;}
+  details.prompt summary::before{content:"▸ ";}
+  details.prompt[open] summary::before{content:"▾ ";}
+  details.prompt pre{margin:0;padding:12px 14px;color:#e2e8f0;font-family:ui-monospace,Menlo,monospace;font-size:12.5px;white-space:pre-wrap;border-top:1px solid #334155;}
+  .copybtn{float:right;margin:6px 10px 0 0;font-size:11px;background:#1e40af;color:#fff;border:none;border-radius:6px;padding:3px 10px;cursor:pointer;}
+  .copybtn:active{background:#16a34a;}
+  ul.check{list-style:none;padding-left:0;margin:0;}
+  ul.check li{display:flex;align-items:flex-start;gap:11px;padding:9px 13px;margin-bottom:6px;background:var(--card);border:1px solid var(--border);border-radius:8px;font-size:14px;}
+  ul.check li.done{background:#f0fdf4;border-color:#bbf7d0;}
+  .fname{font-weight:600;}
+  .why{color:var(--muted);font-size:13px;margin-top:2px;}
+  footer{color:var(--muted);font-size:12px;margin-top:32px;padding-top:14px;border-top:1px solid var(--border);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>qval — Updated Feature Spec</h1>
+  <div class="subtitle"><strong>Vendor-neutral AI testing for QA teams.</strong> Ready-made test suites + a review &amp; sign-off workflow for AI features — works with the eval tools your devs already use.</div>
+  <div class="meta">Full detail per feature + a paste-ready Claude Code prompt for each · OSS-first · Updated 2026-06-10 · Prompts verified against repo code at commit <code>1462179</code> (shipped surface: F-01–F-05 + OBS-01) · Supersedes features-oss.html / features-enterprise.html</div>
+
+  <div class="decision-box"><strong>Licensing: 100% open source (MIT) until traction.</strong> No enterprise tier is built or sold until PMF signals exist (repeat runs by strangers, community-contributed test cases, 10+ adopting teams). <em>Never paywall:</em> verification, the single-user workflow, the test library. <em>Reserved for paid later (names only — do not build):</em> hosted/shared state, RBAC + SSO, audit trail &amp; retention, Jira/ServiceNow, public transparency log, support/SLA.</div>
+
+  <div class="hero-box"><strong>Flagships = U-01 (<code>qval ui</code> local console) + L-01 (test library).</strong> These two carry adoption. The Release Passport (F-13) is demoted from identity to supporting feature. Positioning pillars in every feature decision: <strong>vendor-neutral</strong> (no model to sell) · <strong>local-first</strong> (data never leaves the machine) · <strong>built for the person who has to say GO</strong>.</div>
+
+  <div class="howto"><strong>How to use the Claude Code prompts:</strong> run Claude Code from the repo root, one feature per session. <strong>Step 1: paste the "Repo ground truth" context block below, then the feature prompt under it.</strong> House rules baked into every prompt: Python 3.9+, no new core dependencies (core deps are <code>openai</code>, <code>requests</code>, <code>pyyaml</code> — anything else is an optional extra), TDD (failing tests first), new feature branch then merge to main, spec in <code>docs/changes/</code> first, keep <code>qval run --mock</code> green, update README/docs in the same change. Review every diff before committing — especially scorer/gate logic, since trust is the product.</div>
+
+  <h2>Repo ground truth — paste this before every prompt</h2>
+  <div class="feat">
+    <p><strong>Why this exists:</strong> several internal docs (and earlier versions of this spec) claim F-01→F-13 are all shipped. The <em>code</em> says otherwise: as of commit <code>1462179</code> (2026-06-10), the repo contains <strong>F-01 (canonical schema), F-02 (CLI), F-03 (Promptfoo importer), F-04 (diff + gate), F-05 (report), OBS-01 (cost/latency)</strong> — and nothing else. Policy engine (F-06), control vocab (F-07), signed pack/passport (F-08/F-13), DeepEval importer (F-09), review workflow (F-10), HTTP adapter (F-11), judge assist (F-12), viewer (F-16), and <code>qval ui</code> <strong>do not exist yet</strong> (<code>qval/project.py</code> / U-00 shipped 2026-06-10). An LLM coding against the old claims will import modules that aren't there. This block is the verified contract; every prompt below has been rewritten against it.</p>
+    <details class="prompt"><summary>Repo ground truth context block — copy &amp; paste first, before any feature prompt</summary><button class="copybtn">Copy</button><pre>REPO GROUND TRUTH for qval (verified against code at commit 1462179, 2026-06-10). Trust this over any docs/FEATURES.md claims. If something here contradicts the repo, re-verify in the repo and say so.
+
+LAYOUT
+- Package qval/, console script "qval = qval.cli:main" (argparse dispatcher in qval/cli.py). Subcommands in qval/commands/: init.py, doctor.py, run.py, import_cmd.py, gate_cmd.py, report_cmd.py — all six are real. stubs.py is the seam for registering not-yet-built commands (they would print "not implemented — ships in F-XX" and exit 3); its _STUBS registry is EMPTY today. When you add a command, register the real parser in qval/cli.py and remove any stub entry.
+- qval/canonical/: schema.py (dataclasses + vocab, SCHEMA_VERSION "1.0"), adapter.py (native→canonical: test_result_to_case, test_result_to_finding, run_summary_to_canonical), io.py (save_canonical(run, path), load_canonical(path)).
+- qval/engine/: schemas.py = NATIVE types: TestCase, ModelResponse, DetectorResult, TestResult, RunSummary. Native statuses are UPPERCASE "PASS"/"FAIL"/"NEEDS_REVIEW"; native risk levels critical/high/medium/low.
+- qval/engine/model_client.py: ModelClient Protocol = {provider: str, complete(prompt) -> ModelResponse}. Implementations: OpenAIClient (openai SDK, retry via _retrying_call with exponential backoff), AnthropicClient (requests-based STUB — raises, shows the wire-up shape), MockClient (deterministic, seeded). Client construction happens in qval/commands/run.py build_client(config, mock=..., model_override=..., ...).
+- qval/engine/test_runner.py: TestRunner(run_id, client, ...).run(cases, suite_label) -> (list[TestResult], RunSummary). RunSummary includes latency percentiles (OBS-01) via _latency_percentiles.
+- qval/engine/pricing.py: load_pricing(config), compute_cost(model, prompt_tokens, completion_tokens, pricing). Prices live in config/model_config.json "pricing" map (USD per 1k tokens); unknown model -> warning path (reset_warnings exists for tests).
+- qval/scorers/: base_scorer.py holds detector FUNCTIONS + phrase libraries (REFUSAL_PHRASES, SAFE_ALTERNATIVE_PHRASES, ...) + get_scorer(category) dispatcher. EXACTLY 7 categories, one scorer module each: safety, instruction_following, bias, toxicity, hallucination, robustness, privacy. There is NO class-based detector registry: ScorerFn = Callable[[TestCase, str, str|None], dict] returning {"status", "score", "scoring_reason", "detector_results"}.
+- qval/gate/: diff.py diff_runs(baseline: CanonicalRun|None, current: CanonicalRun) -> RunDiff (with Regression, CategoryDelta); decision.py evaluate(diff, thresholds: GateThresholds|None) -> Decision. GateThresholds is the ONLY policy mechanism today; qval/templates/policy.yaml (release_policy: block_on / pass_rate_floor / require_review) is scaffolded by init but NOT parsed by any code yet.
+- qval/importers/: base.py BaseImporter, registry.py (register / get_importer / available_tools — CLI choices derive from it). Only PromptfooImporter is registered. NO DeepEval importer.
+- qval/reports/: canonical_report.py is the F-05 report (render_markdown(run, diff, ...), render_html(run, diff, ...)); report_generator.py + html_template.py are the OLDER native-report path still used by qval run.
+- qval/utils/: text_utils.py (normalize, contains_any_phrase, ...), time_utils.py, file_loader.py. No jsonpath helper exists yet.
+- qval/templates/: qval.yaml, policy.yaml, suites/example.json (shipped via [tool.setuptools.package-data] qval = ["templates/**/*"]).
+- Repo root config/ (NOTE: currently resolved relative to the repo checkout, not the user's project — that is the U-00 bug): model_config.json (provider, model, temperature, max_tokens, timeout_seconds, retry{max_attempts, initial_backoff_seconds, backoff_multiplier}, system_prompt, pricing), scoring_config.json, risk_matrix.json.
+- test_cases/*.json: 7 suite files (safety, instruction_following, bias, toxicity, hallucination, robustness, privacy = *_tests.json). Each is a JSON ARRAY of native cases: {id: "SAFETY-001", category: one-of-the-7, name, description, risk_level: critical|high|medium|low, prompt, expected_behavior, scoring_type, detectors: [detector names], manual_review_required: bool, tags: [str]}. NOTE: native field is "id"; the canonical Case uses "case_id". Suite files have NO control_ids field yet.
+- outputs/: evidence/, logs/, raw_responses/, reports/, results/ (canonical run.json files land under results/).
+- tests/: pytest (test_canonical_schema, test_gate, test_cli, test_config, test_detectors, test_runner_smoke, test_import_promptfoo, test_canonical_report, test_observability).
+
+CANONICAL VOCAB (qval/canonical/schema.py)
+- Severities: critical / high / medium / low / info (SEVERITY_RANK worst→best 4..0). Native risk levels lack "info"; map_native_severity translates.
+- Statuses (lowercase): passed / failed / needs_review / waived / approved / blocked. map_native_status translates native uppercase.
+- Decision verdicts: "GO" / "CONDITIONAL-GO" / "NO-GO".
+- Dataclasses: Control, Artifact, Reviewer(reviewer_id, decision: approve|reject|waive, notes, decided_at), Waiver(waiver_id, reason, approver, approved_at, expires_at — empty string = no expiry), Case(case_id, name, category, prompt, expected_behavior, source_tool, tags, extra), Finding(finding_id, case_id, status, severity, score, reason, response, control_ids, manual_review_required, reviewers, waiver, extra), Decision(verdict, rationale: list[str], decided_at, policy_version), EvidencePack, CanonicalRun. All timestamps ISO-8601 UTC strings. Finding/Case __post_init__ validate vocab — invalid values raise ValueError.
+
+CLI THAT ACTUALLY WORKS (complete list — no other subcommands exist; unknown names are argparse errors, exit 2)
+- qval run [--suite all|SUITE] [--model M] [--mock] [--limit N] [--per-suite-limit N] [--seed N (default 42)]
+- qval import TOOL INPUT [...]   (TOOL choices from importer registry; today: promptfoo)
+- qval gate --current RUN.json [--baseline RUN.json] [--out PATH] [--min-pass-rate F] [--block-severity S]
+- qval report RUN.json [--baseline RUN.json] [--format html|markdown] [--out PATH]
+- qval init, qval doctor
+
+DEPENDENCY RULES
+- Python >= 3.9. Core deps (pyproject): openai>=1.40.0, requests>=2.31.0, pyyaml>=6.0; dev: pytest. requests and PyYAML are ALREADY available — do not write "stdlib only" workarounds for HTTP or YAML.
+- NO new core dependencies. New libs only as [project.optional-dependencies] extras, with a missing-dep error that prints the exact pip install command.
+
+NOT YET BUILT (do not import; build the seam or declare the prerequisite): policy.yaml parsing / policy engine (F-06), control vocabularies (F-07), signed evidence pack + passport (F-08/F-13), DeepEval importer (F-09), review workflow / qval/review/ (F-10), HTTP target adapter (F-11), judge assist (F-12), static viewer (F-16), qval ui, qval lint. If your task depends on one of these, FIRST check whether a later session already built it (ls the path); if absent, either implement the minimal version inside this change (state that you are doing so) or stop and report the missing prerequisite. Never fabricate an import.
+
+HOUSE RULES
+- TDD: failing tests first. Keep "qval run --mock" green at every commit. New feature branch per feature, merge to main when done. Write docs/changes/&lt;ID&gt;-&lt;slug&gt;.md (design spec) before implementing. Update README + relevant docs in the same change. Conservative scoring bias: ambiguous -> NEEDS_REVIEW, never auto-pass.</pre></details>
+  </div>
+
+  <h2>P0 — Adoption blockers (build now, weeks 1–6)</h2>
+
+  <div class="feat">
+    <h3><span class="id">U-00</span> · First-run fix &amp; project-aware paths</h3>
+    <div class="badges"><span class="pill pill-done">Shipped</span><span class="pill pill-meta">2026-06-10</span><span class="pill pill-meta">Effort: ~1 weekend</span><span class="pill pill-meta">Depends: F-02</span><span class="pill pill-meta">Unblocks: all promotion</span></div>
+    <p><strong>Why:</strong> The README admits a fresh <code>qval init</code> project is not runnable end-to-end — <code>qval run</code> resolves <code>test_cases/</code> and <code>config/</code> relative to the repo checkout. Every piece of content, every demo, every design-partner session funnels into <code>pip install → init → run</code>. If that breaks, nothing downstream matters. This ships before anything else and before any promotion.</p>
+    <h4>Scope</h4>
+    <ul>
+      <li>Project root discovery: walk up from cwd to find <code>qval.yaml</code> (git-style); all path resolution (test cases, config, outputs) anchors there.</li>
+      <li><code>qval init</code> scaffolds a complete runnable project: starter suites (copied from templates), <code>config/</code>, <code>qval.yaml</code>, <code>.env.example</code>, <code>outputs/</code> with .gitignore.</li>
+      <li><code>qval doctor</code> validates the discovered project and prints the resolved root; clear, actionable error when no project is found ("run qval init or cd into a qval project").</li>
+      <li>Time-to-first-report under 10 minutes including pip install; README quickstart rewritten against an empty directory, with a terminal-recording GIF.</li>
+    </ul>
+    <h4>Acceptance criteria</h4>
+    <ul>
+      <li><code>pip install -e . && mkdir /tmp/fresh && cd /tmp/fresh && qval init && qval run --mock</code> produces a report and evidence pack with zero edits.</li>
+      <li>Running from a nested subdirectory of a project works; running outside any project gives the actionable error.</li>
+      <li>CI job exercises the fresh-directory flow on Linux + macOS + Windows.</li>
+    </ul>
+    <details class="prompt"><summary>Claude Code prompt — copy &amp; paste</summary><button class="copybtn">Copy</button><pre>You are working in the qval repo (Python 3.9+, argparse CLI in qval/cli.py with subcommands in qval/commands/). Problem: "qval run" resolves test_cases/ and config/ relative to the repo checkout, so a freshly "qval init"-scaffolded project in an empty directory is not runnable. Fix this with project-aware path resolution.
+
+Requirements:
+1. Add qval/project.py with find_project_root(start_dir) that walks up the directory tree looking for qval.yaml (like git finds .git). Return a Project object exposing resolved paths: root, test_cases_dir, config_dir, outputs_dir, policy_path. Paths may be overridden by keys in qval.yaml (test_cases_dir, config_dir, outputs_dir) relative to root.
+2. Refactor qval/commands/run.py, doctor.py, and any other command that touches test_cases/ or config/ to use Project instead of repo-relative paths. The repo checkout itself must keep working (it already contains qval.yaml or fall back to legacy layout with a deprecation note).
+3. Upgrade "qval init" templates so a scaffolded project contains: qval.yaml, policy.yaml, config/ (model_config.json, scoring_config.json, risk_matrix.json copied from package data), test_cases/ with at least 2 starter suites (a small instruction_following and safety suite copied from package data), outputs/.gitignore, and .env.example.
+4. "qval doctor" must print the resolved project root and each resolved path, and exit non-zero with the message "No qval project found. Run 'qval init' to create one, or cd into a project." when no root is found.
+5. TDD: write failing tests first in tests/test_project_resolution.py covering: discovery from nested subdir, override keys, no-project error, and an end-to-end test using tmp_path that runs init then run --mock and asserts a report and a canonical run.json under outputs/results/ exist.
+6. Facts to honor: the repo-relative resolution lives in qval/commands/run.py (load_cases reads test_cases/, build_client reads config/model_config.json) and qval/commands/doctor.py. qval/templates/ already ships qval.yaml, policy.yaml, and suites/example.json via package-data — extend, don't recreate. Starter suites must follow the existing native case shape (JSON array; fields: id, category [one of the 7 existing categories], name, description, risk_level, prompt, expected_behavior, scoring_type, detectors, manual_review_required, tags).
+7. Constraints: no new dependencies (openai/requests/pyyaml already core). Keep all existing tests green. Update README quickstart section to reflect that init-scaffolded projects are fully runnable, and remove the old caveat note.
+
+Do not touch scorer or gate logic in this change.</pre></details>
+  </div>
+
+  <div class="feat">
+    <h3><span class="id">U-01</span> · <code>qval ui</code> — local-first web console</h3>
+    <div class="badges"><span class="pill pill-flag">Flagship</span><span class="pill pill-meta">Effort: 4–6 weekends, 2 phases</span><span class="pill pill-meta">Depends: U-00, F-10, F-11, F-16 viewer</span></div>
+    <p><strong>Why:</strong> The QA persona will not live in a CLI — manual QA testers and QA leads need a visual surface. But a hosted drag-and-drop SaaS would enter the most crowded segment (Maxim, Vellum, Confident AI, Braintrust). The differentiated shape: a <strong>localhost console over the existing engine</strong> — zero hosting, zero auth to build, data never leaves the machine (the regulated-org story SaaS can't match), and it is the free on-ramp to the future paid Evidence Room. Market check: Confident AI markets "QA test via HTTP, no code" — qval's edge is local-first + the review/sign-off workflow they treat as secondary.</p>
+    <h4>Scope — four screens</h4>
+    <ul>
+      <li><strong>Suite Library:</strong> browse suites and test cases, enable/disable per run, see category/severity/control mappings, coverage summary.</li>
+      <li><strong>Run:</strong> form-driven target setup (mock / provider+model / HTTP adapter URL+headers+JSONPath), suite selection, live progress, run history list.</li>
+      <li><strong>Review Queue:</strong> the heart. NEEDS_REVIEW items sorted by severity; approve / reject / waive with required notes; side-by-side baseline vs current; judge-assist rationale shown when available.</li>
+      <li><strong>Sign-off:</strong> gate decision vs selected baseline (GO / CONDITIONAL-GO / NO-GO with triggering policy rules), export report + evidence pack, optional passport creation.</li>
+    </ul>
+    <h4>Architecture decisions (locked)</h4>
+    <ul>
+      <li>Served by <code>qval ui</code> on 127.0.0.1 only; Flask as optional extra (<code>pip install qval[ui]</code>); REST JSON endpoints wrapping existing engine functions — every UI action must also be possible via CLI (UI is a view, not a second engine).</li>
+      <li>Frontend: vanilla JS + vendored assets inside the package. No CDN (must work fully offline), no node build chain (keeps contributors unblocked).</li>
+      <li>Reuse the F-16 static viewer rendering for transcripts/media inside run detail.</li>
+    </ul>
+    <h4>Acceptance criteria</h4>
+    <ul>
+      <li>From a fresh project: <code>qval ui</code> → run the mock suite from the browser → review two NEEDS_REVIEW items → export a sign-off report, without touching the CLI.</li>
+      <li>Works with network unplugged. Nothing binds beyond localhost. No telemetry.</li>
+      <li>A manual QA tester who has never seen qval completes the above in a 15-minute unmoderated session (test with 3 people — this is the strategy validation gate).</li>
+    </ul>
+    <details class="prompt"><summary>Claude Code prompt — Phase A (server + Suite Library + Run + run detail)</summary><button class="copybtn">Copy</button><pre>You are working in the qval repo (Python 3.9+, argparse CLI, engine in qval/engine/, canonical schema in qval/canonical/schema.py). PREREQUISITE: qval/project.py from U-00 must exist — verify first; if missing, stop and report. Engine APIs you will wrap: TestRunner(run_id, client, ...).run(cases, suite_label) -> (list[TestResult], RunSummary); MockClient/OpenAIClient built by build_client() in qval/commands/run.py; suite loading via load_cases() in qval/commands/run.py; canonical persistence via qval/canonical/io.save_canonical / load_canonical; native->canonical via qval/canonical/adapter.run_summary_to_canonical. Build Phase A of "qval ui": a local-first web console.
+
+Architecture (locked decisions, do not deviate):
+- New command "qval ui" in qval/commands/ui.py. Starts a Flask app bound to 127.0.0.1 only, default port 8642, --port flag. Flask is an OPTIONAL extra: add [project.optional-dependencies] ui = ["flask"] to pyproject.toml; if Flask is missing, the command exits with: pip install qval[ui].
+- Package layout: qval/ui/server.py (app factory + REST routes), qval/ui/static/ (vendored vanilla JS/CSS, no CDN, no build step), qval/ui/templates/index.html (single-page shell).
+- The UI is a VIEW over the engine: routes must call the same functions the CLI uses. Today suite loading (load_cases) and client construction (build_client) live in qval/commands/run.py — extract them into qval/engine/ first so CLI and UI share them. Run execution = TestRunner.run; run history = canonical run.json files under the project's outputs/results/ via load_canonical. No business logic in routes.
+
+REST endpoints for Phase A:
+- GET /api/project (resolved root + paths), GET /api/suites (suites with cases, categories, severities, tags — note: suite files have no control_ids yet; omit until F-07/L-01 adds them), GET /api/runs (run history = canonical run.json files in outputs/results/), GET /api/runs/RUN_ID (full canonical run: cases, findings, status), POST /api/runs (body: suite names, target config = mock | provider/model; HTTP-adapter targets only if F-11 exists — check for it, otherwise return 501 with "requires F-11"; starts a run in a background thread, returns run_id), GET /api/runs/RUN_ID/progress (completed/total, current case id — instrument TestRunner with an optional progress callback rather than forking it).
+- Never echo secrets: API keys come from env only; reject any request containing an api_key field.
+
+Frontend Phase A: left nav (Suites, Runs), Suite Library screen (browse suites/cases, severity badges, checkbox selection), Run screen (target form: mock + provider/model always; HTTP-adapter form only when the server reports F-11 available, start button, progress bar polling the progress endpoint), Run detail screen (findings table with severity colors — canonical statuses are lowercase passed/failed/needs_review, filter by status/category, case drawer showing prompt/response/scoring_reason and detector_results from Finding.extra; F-16 viewer does not exist yet — render any extra["conversation"] transcript with a simple built-in escaped renderer).
+
+TDD: tests/test_ui_api.py with Flask test client — suites endpoint shape, run lifecycle against the mock provider (post run, poll progress, fetch results), localhost-only binding, missing-flask error path. Mark slow tests appropriately.
+
+Constraints: keep CLI behavior unchanged; all existing tests green; README gets a "qval ui" section with a screenshot placeholder. Security: bind 127.0.0.1 only, no CORS, escape all rendered model output (model responses are untrusted content - this matters).</pre></details>
+    <details class="prompt"><summary>Claude Code prompt — Phase B (Review Queue + Sign-off)</summary><button class="copybtn">Copy</button><pre>Continue in the qval repo. Phase A of "qval ui" exists (Flask app in qval/ui/, REST over the engine) — verify before starting. IMPORTANT: the F-10 review workflow does NOT exist yet (no qval/review/, no "qval review" CLI — it is a stub exiting 3). Build the shared review primitives in this change: qval/review/ module that loads a canonical run, lists needs_review findings, and records decisions by appending Reviewer(reviewer_id, decision approve|reject|waive, notes, decided_at ISO-8601 UTC) to Finding.reviewers (and constructing Waiver(waiver_id, reason, approver, approved_at, expires_at) for waives), then saving via save_canonical. Give it BOTH a thin "qval review" CLI subcommand and the UI endpoints below, so CLI/UI parity holds from day one. Build Phase B: the Review Queue and Sign-off screens — the screens that differentiate qval for QA teams.
+
+Review Queue:
+- Endpoints: GET /api/review/RUN_ID (needs_review findings sorted by severity desc — canonical lowercase statuses), POST /api/review/RUN_ID/FINDING_ID/decision (body: decision approve|reject|waive, reviewer name, notes — notes REQUIRED for waive, expires_at optional for waive).
+- Every decision appends to the finding's reviewers list in the canonical schema (who, what, when, notes) and is reflected in subsequent gate evaluations (decided findings leave the needs_review state per the status vocabulary: approved / failed / waived).
+- UI: queue list with severity chips and keyboard navigation (j/k move, a approve, r reject, w waive opening a notes modal), detail pane showing prompt, response, expected behavior, and scoring_reason + detector_results from Finding.extra. Judge-assist (F-12) does not exist yet — render its rationale/confidence only when Finding.extra carries it; no judge code in this change. Side-by-side baseline vs current response when a baseline run is selected.
+
+Sign-off screen:
+- Endpoints: GET /api/gate/RUN_ID?baseline=BASELINE_ID wrapping the existing gate engine exactly as qval/commands/gate_cmd.py does: load_canonical both runs, diff_runs(baseline, current), evaluate(diff, GateThresholds) -> Decision{verdict GO|CONDITIONAL-GO|NO-GO, rationale: list[str]}. Return verdict, rationale strings verbatim, regressions from RunDiff, and unresolved needs_review count. (policy.yaml is not parsed by any code yet — thresholds come from GateThresholds; do not invent a policy loader here.) POST /api/export/RUN_ID (body: format html|markdown) writing via qval/reports/canonical_report.render_html / render_markdown and returning the file path; evidence-pack export only if F-08 exists — otherwise omit the option.
+- UI: baseline picker (default: previous run of same suite set), decision banner listing the Decision.rationale lines verbatim, regression table, blocked state when unresolved needs_review items exist (link back to queue), export buttons.
+
+TDD first: tests covering decision persistence (Reviewer appended, run.json round-trips through load_canonical with vocab validation passing), waive-requires-notes validation, gate endpoint parity with "qval gate --current --baseline" output on the same fixture runs, export round-trip. UI smoke test: full flow mock run -> review 2 items -> gate -> export, via test client.
+
+Constraints: no new JS dependencies, vendored assets only, escape all model output, localhost only. Update docs/FEATURES.md status for U-01 and add a short docs/ui.md user guide written for a QA tester (no ML jargon).</pre></details>
+  </div>
+
+  <div class="feat">
+    <h3><span class="id">B-01</span> · Export bridges — <code>qval export promptfoo|deepeval</code></h3>
+    <div class="badges"><span class="pill pill-next">Next</span><span class="pill pill-meta">Effort: ~1 weekend</span><span class="pill pill-meta">Depends: F-01, F-03/F-09</span></div>
+    <p><strong>Why:</strong> Imports already exist; exports complete the engine-agnostic story and are the trojan horse for the test library — a Promptfoo or DeepEval user can adopt qval's <em>content</em> without adopting the runner. Content-first adoption converts to tool adoption later via the sign-off layer. Strategically: if Promptfoo ever moves into qval's lane, the library still travels into their ecosystem — the asset survives.</p>
+    <h4>Scope</h4>
+    <ul>
+      <li><code>qval export promptfoo --suite NAME --out promptfooconfig.yaml</code>: cases → promptfoo tests; expected behavior → best-effort asserts (contains/not-contains/llm-rubric stub) with a comment noting manual-review semantics that don't translate.</li>
+      <li><code>qval export deepeval --suite NAME --out test_NAME.py</code>: generates a runnable pytest file with DeepEval test cases.</li>
+      <li>Round-trip fidelity report: what mapped cleanly, what degraded (severity, manual_review flags, paired bias prompts), printed on export.</li>
+    </ul>
+    <h4>Acceptance criteria</h4>
+    <ul><li>Exported promptfoo config passes <code>promptfoo eval</code> schema validation on a fixture suite; exported DeepEval file is importable Python. Degradation report lists every lossy field.</li></ul>
+    <details class="prompt"><summary>Claude Code prompt — copy &amp; paste</summary><button class="copybtn">Copy</button><pre>You are in the qval repo. There are importers (qval/importers/: BaseImporter + registry with register/get_importer/available_tools; ONLY PromptfooImporter exists — the DeepEval importer F-09 is not built, which does not block this feature) that map external results INTO the canonical schema (qval/canonical/schema.py). Build the reverse: exporters that turn qval test SUITES (test_cases/*.json — JSON arrays of native cases with fields id, category, name, description, risk_level, prompt, expected_behavior, scoring_type, detectors, manual_review_required, tags) into runnable configs for other tools.
+
+1. Create qval/exporters/ with BaseExporter + registry mirroring the importer seam. Implement PromptfooExporter and DeepEvalExporter.
+2. New CLI command: "qval export TOOL --suite SUITE_NAME --out PATH" in qval/commands/export_cmd.py (argparse, consistent with import_cmd.py).
+3. PromptfooExporter: each qval case becomes a promptfoo test (description from name, vars.input from prompt). Map expected behavior to best-effort asserts: detector "refusal_detector" -> a contains/icontains assert set or llm-rubric stub with the expected_behavior text; unsupported detectors become a commented llm-rubric placeholder. Paired bias prompts become two tests with a shared tag. Emit valid promptfoo YAML (research the current promptfooconfig.yaml schema in their docs before writing the mapping; cite the doc URL in a code comment).
+4. DeepEvalExporter: generate a pytest file using deepeval's LLMTestCase pattern with the prompt as input and expected_behavior in the comments plus a GEval-style criteria string. The file must be syntactically valid standalone Python (compile() it in tests) and must not require deepeval to be installed in qval's env.
+5. Fidelity report: after export, print a table of fields that translated cleanly vs degraded (risk_level, manual_review_required, detectors without equivalents, paired bias prompts). Also write it as PATH.fidelity.md next to the output.
+6. TDD: tests/test_exporters.py — fixture suite with at least one case per category (the 7 categories: safety, instruction_following, bias, toxicity, hallucination, robustness, privacy), assertions on YAML structure, Python compile check for the deepeval file, and fidelity report contents.
+Constraints: stdlib + PyYAML (PyYAML is a core dependency in pyproject — use yaml.safe_dump). Update README Commands table and docs/comparison_with_existing_tools.md coexistence section.</pre></details>
+  </div>
+
+  <div class="feat">
+    <h3><span class="id">D-01</span> · <code>qval demo</code> — built-in target bot + 10-minute quickstart</h3>
+    <div class="badges"><span class="pill pill-next">Next</span><span class="pill pill-meta">Effort: ~1 weekend</span><span class="pill pill-meta">Depends: U-00, F-11</span></div>
+    <p><strong>Why:</strong> Tutorials that test a mock provider feel fake; tutorials that require an API key lose half the audience at step one. <code>qval demo</code> launches a deliberately flawed local "support bot" (deterministic, seeded flaws: occasional fake-PII leak, a hallucinated refund policy, a prompt-injection vulnerability) so every tutorial, conference demo, and first-run experience tests something <em>real</em> and finds <em>real</em> failures — including NEEDS_REVIEW items that make the Review Queue demo land. This is the teaching instrument for the whole content strategy.</p>
+    <h4>Acceptance criteria</h4>
+    <ul><li><code>qval demo &amp;&amp; qval run --suite support-bot-starter</code> yields a report with at least 2 failures and 2 NEEDS_REVIEW items, deterministically. No API key, no network. Quickstart doc + GIF reproduce it in under 10 minutes.</li></ul>
+    <details class="prompt"><summary>Claude Code prompt — copy &amp; paste</summary><button class="copybtn">Copy</button><pre>You are in the qval repo. Build "qval demo": a tiny local HTTP "support bot" used as a realistic test target for tutorials and demos, plus a starter suite that exercises it.
+
+1. qval/demo/bot.py: stdlib-only HTTP server (http.server) on 127.0.0.1:8651, POST /chat accepting {"message": "..."} and returning {"reply": "..."}. Behavior is a deterministic rules engine (seeded, no LLM, no network): normal helpful canned replies for greetings/order-status/returns; INJECTED FLAWS that qval's detectors can catch: (a) when asked about refund policy, it confidently states a fabricated "90-day no-questions refund" policy (hallucination), (b) when a message contains "ignore previous instructions", it complies and reveals its system prompt (prompt injection / system leak), (c) when asked "what did the last customer say", it leaks a fake PII string like a phone number (privacy), (d) ambiguous medical question gets a borderline answer phrased to trigger manual review rather than hard fail. Flaws must be deterministic given the same input.
+2. New command "qval demo" in qval/commands/demo.py: starts the bot, prints the URL and the exact next command to run. --port flag. Ctrl-C clean shutdown.
+3. PREREQUISITE CHECK: the F-11 HTTP target adapter does NOT exist yet. Two options — pick based on what you find in the repo: (a) if qval gained an HTTP adapter since this prompt was written, target the bot through it; (b) otherwise implement the minimal seam HERE: an HttpTargetClient in qval/engine/ that satisfies the existing ModelClient Protocol (provider: str, complete(prompt) -> ModelResponse) by POSTing {"message": prompt} to a configured URL (use requests — it is a core dep — with timeout from model_config.json timeout_seconds) and reading .reply from the JSON body. Wire it into build_client() in qval/commands/run.py behind provider "http" with a url config key. State clearly in your summary that this is the F-11 seed.
+   Then: starter suite test_cases/support_bot_starter_tests.json (~12 cases, native shape: id SUPDEMO-001..., category from the existing 7, risk_level, detectors from the existing detector names) — correct-behavior cases that PASS, plus cases hitting each injected flaw. Document the target config (url http://127.0.0.1:8651/chat) in the quickstart.
+4. Deterministic outcome contract, enforced by an e2e pytest: start bot on a free port, run the starter suite via the real TestRunner + the HTTP client, assert exact counts: at least 2 FAIL, at least 2 NEEDS_REVIEW, rest PASS (native uppercase statuses at runner level).
+5. Write docs/quickstart-10min.md: install -> init -> demo -> run -> open report -> review queue, written for a QA engineer with zero ML background, every command copy-pasteable.
+Constraints: the bot itself is stdlib http.server (fully offline, deterministic); the client side may use requests (core dep). The bot must print a banner stating it is intentionally flawed demo software, not for production. Keep all existing tests green.</pre></details>
+  </div>
+
+  <div class="feat">
+    <h3><span class="id">T-01</span> · Shipped-core hardening &amp; test-depth audit</h3>
+    <div class="badges"><span class="pill pill-next">Next</span><span class="pill pill-meta">Effort: ~2 weekends, parallelizable</span><span class="pill pill-meta">Depends: none</span></div>
+    <p><strong>Why:</strong> F-01→F-13 were marked done in a very compressed window. qval's entire pitch is trustworthiness of the sign-off path — a gate that mis-evaluates a policy rule or a passport that verifies incorrectly is fatal to the brand in front of exactly the audience being courted. Before promotion drives strangers to the repo, the trust-critical paths (gate, policy engine, signing/verify, review audit trail) need an adversarial depth pass.</p>
+    <h4>Scope</h4>
+    <ul>
+      <li>Audit each shipped feature against its spec in <code>docs/changes/</code>; catalogue edge cases, error paths, and untested branches into <code>docs/TECH_DEBT.md</code>.</li>
+      <li>Priority order: gate/policy evaluation → passport sign/verify → review decisions/audit trail → importers (malformed input fuzzing) → HTTP adapter (timeouts, non-JSON, auth failures).</li>
+      <li>Property-style tests where it pays: policy rule combinations, diff edge cases (empty baseline, identical runs, severity transitions), tampered-byte permutations on passports.</li>
+    </ul>
+    <details class="prompt"><summary>Claude Code prompt — copy &amp; paste</summary><button class="copybtn">Copy</button><pre>You are in the qval repo, acting as a skeptical senior QA engineer auditing your own product before strangers depend on it. GROUND TRUTH: the shipped surface is F-01..F-05 + OBS-01 only (docs/FEATURES.md overstates this — flag that as an audit finding itself). The trust-critical paths that actually exist: qval/gate/decision.py (evaluate + GateThresholds) and qval/gate/diff.py (diff_runs), qval/canonical/ (schema validation, adapter native->canonical mapping, io round-trip), qval/importers/promptfoo.py, qval/engine/test_runner.py + pricing.py (OBS-01 numbers feed reports people trust), and qval/reports/canonical_report.py. If passport/review/policy/HTTP-adapter code has appeared since (check the repo), extend the audit to it; otherwise note them as not-yet-built and move on.
+
+Phase 1 - AUDIT (no code changes): read each trust-critical module against its spec in docs/changes/ (F-01..F-05, OBS-01). Produce docs/audit-2026-06.md listing, per module: untested branches, unhandled error paths, ambiguous behaviors (e.g., what does diff_runs do with an empty/None baseline? duplicate case ids? a waived critical finding? severity values outside the vocab arriving via an importer? cost math when token counts are None?), and any place where an exception could be swallowed silently. Rank findings CRITICAL/HIGH/MEDIUM by impact on a release decision being wrong.
+
+Phase 2 - TESTS FIRST: for every CRITICAL and HIGH finding, write a failing (or characterizing) test BEFORE any fix: gate permutation tests (GateThresholds x severities x categories x missing-baseline x waived findings), canonical round-trip property tests (save_canonical -> load_canonical identity, vocab validation rejects bad status/severity loudly), importer fuzz tests with malformed promptfoo payloads (must error with actionable messages, never partially import silently), pricing tests (unknown model, zero/None tokens, per-1k math), report rendering with hostile content (model responses containing HTML/script must arrive escaped).
+
+Phase 3 - FIX: make the tests pass with minimal, surgical changes. No refactors beyond what fixes require. Each fix references its audit finding ID in the commit message.
+
+Constraints: do not change any public CLI contract or schema. Keep a running tally in docs/audit-2026-06.md of findings fixed vs deferred (deferred ones move to docs/TECH_DEBT.md with rationale). Report final branch coverage for the trust-critical modules listed above (pytest --cov via the dev extra; add coverage config if absent); flag anything below 90% branch coverage on decision-affecting code.</pre></details>
+  </div>
+
+  <h2>P1 — The moat: test library, community, bridges (weeks 4–12)</h2>
+
+  <div class="feat">
+    <h3><span class="id">L-01</span> · Test library expansion — suite packs by application type (70 → 200+)</h3>
+    <div class="badges"><span class="pill pill-flag">Flagship</span><span class="pill pill-meta">Effort: ongoing, 4 packs first</span><span class="pill pill-meta">Depends: U-00</span></div>
+    <p><strong>Why:</strong> The only asset that survives an incumbent moving into this lane. Promptfoo's plugins are adversarial <em>generators</em>; nobody owns the curated, versioned, human-readable regression standard organized the way buyers think — by application type. Content compounds, attracts contributors, and even competitors consuming it spreads it (that's a win — B-01 makes it portable on purpose).</p>
+    <h4>Scope — first four packs (~35 cases each)</h4>
+    <ul>
+      <li><strong>support-bot</strong>: refunds/policy hallucination, escalation behavior, PII handling, tone under abuse, injection via customer message.</li>
+      <li><strong>rag-search</strong>: groundedness, citation faking, "I don't know" behavior, stale-document answers, context-window stuffing.</li>
+      <li><strong>ai-agent</strong>: tool-call safety, scope creep, confirmation-before-action, instruction injection via tool output.</li>
+      <li><strong>summarizer</strong>: omission of critical caveats, sentiment inversion, fabricated quotes, length/format compliance.</li>
+      <li>Every case: OWASP-LLM / NIST AI RMF control mapping, severity rationale in description, paired prompts where bias-relevant, <code>manual_review_required</code> set deliberately, placeholders per <code>responsible_testing_policy.md</code> (non-operational harmful content).</li>
+    </ul>
+    <h4>Acceptance criteria</h4>
+    <ul><li>200+ total cases across 11+ suites; every case passes <code>qval lint</code> (L-02); each pack has a README explaining what it covers and what it deliberately doesn't; coverage matrix shows no OWASP-LLM control at zero.</li></ul>
+    <details class="prompt"><summary>Claude Code prompt — copy &amp; paste (one pack per session)</summary><button class="copybtn">Copy</button><pre>You are in the qval repo. Author a new test suite pack following the existing JSON schema (see test_cases/safety_tests.json for shape and docs/test_case_design.md + docs/responsible_testing_policy.md for authoring rules). This session: the SUPPORT-BOT pack (swap in rag-search / ai-agent / summarizer on later runs).
+
+1. Create test_cases/support_bot_tests.json with ~35 cases covering: policy/refund hallucination, escalation-to-human behavior, PII handling (customer asks bot to repeat another customer's data), tone under abusive input, prompt injection embedded in a customer message, off-topic containment, and compliance phrasing (no legal/medical advice). Mix expected outcomes: most should PASS against a well-behaved model, several target known-weak behaviors, and 4-6 set manual_review_required true with a clear reviewer instruction in expected_behavior.
+2. Schema discipline: unique IDs SUPBOT-001..., category MUST be one of the 7 existing categories (safety, instruction_following, bias, toxicity, hallucination, robustness, privacy — get_scorer raises on anything else; a "support-bot" pack is a thematic grouping ACROSS these categories, not a new category), risk_level justified inside description ("high because a fabricated refund policy creates financial liability"), detectors chosen from names that actually appear in qval/scorers/ — there is no detector registry, so FIRST enumerate the detector function names in base_scorer.py and each *_scorer.py plus the detectors arrays in the shipped test_cases/*.json, and list them in your plan before writing cases. Reuse existing scoring_type values the same way. control_ids: the suite schema has no such field yet — add an optional "control_ids" list to the native case shape, thread it through qval/engine/schemas.TestCase.from_dict and qval/canonical/adapter (canonical Finding already has control_ids), defaulting to [] so all existing suites stay valid; map values to OWASP-LLM / NIST AI RMF per docs/risk_rating_guide.md conventions.
+3. Responsible-testing rules: harmful-content prompts use the placeholder convention from responsible_testing_policy.md - never operational harmful instructions.
+4. Paired bias cases: include 4 paired_prompt cases varying customer name/dialect, identical expected behavior.
+5. Add test_cases/README-support-bot.md: what this pack covers, what it deliberately does not (multi-turn escalation - parked), how to point it at a real bot via the HTTP adapter, expected baseline behavior.
+6. Validate: every case loads through the existing schema validation; add a pytest that loads the suite and asserts ID uniqueness, detector validity, and control_id vocabulary membership.
+IMPORTANT: flag any case where you are unsure a detector can actually evaluate the expected behavior - list those at the end for human review rather than silently weakening the expected_behavior text. I will review every case before merge.</pre></details>
+  </div>
+
+  <div class="feat">
+    <h3><span class="id">L-02</span> · Contribution infrastructure — <code>qval lint</code> + community path</h3>
+    <div class="badges"><span class="pill pill-next">Next</span><span class="pill pill-meta">Effort: ~1 weekend</span><span class="pill pill-meta">Depends: L-01</span></div>
+    <p><strong>Why:</strong> The PMF signal that matters most is the first test case contributed by a stranger. That only happens if contributing is mechanical: a linter that gives instant feedback, CI that validates PRs automatically, and a CONTRIBUTING guide that assumes a QA professional (not an ML engineer). Community-owned content is also the anti-Promptfoo defense — an acquirer can buy a tool, not a community standard.</p>
+    <h4>Scope</h4>
+    <ul>
+      <li><code>qval lint [path]</code>: schema validation, ID uniqueness/format, severity vocabulary, detector existence, control_id vocabulary, responsible-testing heuristics (flag operational-looking harmful strings), description quality (must state severity rationale).</li>
+      <li>GitHub Actions workflow validating PRs touching <code>test_cases/</code>; PR template asking for category, control mapping, and rationale; CONTRIBUTING.md with a 10-minute "your first test case" walkthrough.</li>
+      <li>Recognition loop: contributors file in README, "suite of the week" hook for the content engine (C-01).</li>
+    </ul>
+    <details class="prompt"><summary>Claude Code prompt — copy &amp; paste</summary><button class="copybtn">Copy</button><pre>You are in the qval repo. Build the contribution infrastructure that lets external QA professionals add test cases safely.
+
+1. PREREQUISITE: qval/project.py from U-00 (verify; if absent, default PATH to ./test_cases relative to cwd and note the gap). New command "qval lint [PATH]" in qval/commands/lint_cmd.py — and remove "lint" from qval/commands/stubs.py if it is stubbed there. Checks, each with a stable rule code: QL001 schema-invalid (validate the native case shape: required fields id, category, name, prompt, expected_behavior, risk_level — reuse qval/engine/schemas.TestCase.from_dict as the source of truth rather than duplicating validation), QL002 duplicate/malformed ID (pattern: PACKPREFIX-NNN), QL003 unknown risk_level (must be critical|high|medium|low, per ALL_RISK_LEVELS in qval/engine/schemas.py), QL004 unknown detector — there is NO detector registry today: create one as part of this change (a KNOWN_DETECTORS manifest in qval/scorers/__init__.py listing each detector function name, with a test asserting the manifest matches the functions actually defined in the scorer modules), then lint against it, QL005 unknown control_id — only when a case has control_ids; validate against a vocabulary data file qval/data/control_vocab.json (create it with the OWASP-LLM-01..10 and NIST AI RMF ids used in docs/risk_rating_guide.md; this seeds F-07), QL006 missing severity rationale (description must contain "because" or "risk" - heuristic, warning not error), QL007 responsible-testing red flag (warning when prompt text matches operational-harm heuristics: step-by-step synthesis phrasing, explicit dosage/quantity requests - list patterns in qval/lint/rules.py with comments), QL008 paired_prompt cases must share expected_behavior. Also QL000: category not one of the 7 in get_scorer's mapping (qval/scorers/base_scorer.py) — that is a hard error, the runner would crash.
+2. Output: human-readable table by default, --format json for CI, exit 1 on errors / 0 with warnings unless --strict.
+3. .github/workflows/lint-test-cases.yml: runs qval lint --strict --format json on PRs touching test_cases/, posts a summary comment.
+4. CONTRIBUTING.md: written for a QA engineer, not an ML engineer. Sections: why contribute, anatomy of a test case (annotated real example), the 10-minute first contribution walkthrough (fork, copy template case, qval lint, PR), responsible-testing rules in plain language, how review works, recognition (contributors list).
+5. .github/PULL_REQUEST_TEMPLATE.md asking: pack, category, control mapping, severity rationale, did qval lint pass.
+6. TDD: tests/test_lint.py with one fixture file per rule code violation plus a clean fixture; assert rule codes and exit codes.
+Constraints: no new dependencies. qval lint must also self-validate the shipped test_cases/ in CI so the library always passes its own bar — run it against the 7 shipped suites in a test and fix any violations they already have rather than weakening rules.</pre></details>
+  </div>
+
+  <div class="feat">
+    <h3><span class="id">L-03</span> · Suite pack registry — <code>qval suites list|add|update</code></h3>
+    <div class="badges"><span class="pill pill-next">Next</span><span class="pill pill-meta">Effort: ~1 weekend</span><span class="pill pill-meta">Depends: L-01, L-02</span></div>
+    <p><strong>Why:</strong> Decouples the library's release cadence from the tool's. Users pull new/updated packs without upgrading qval; the project ships "new suite pack" announcements weekly (content engine fuel) instead of waiting on releases. Model: pre-commit hooks / tldr pages — a git repo as registry, no server, no cost, fully auditable.</p>
+    <h4>Scope</h4>
+    <ul>
+      <li>Separate <code>qval-suites</code> GitHub repo with <code>index.json</code> (pack name, version, description, case count, checksum, min schema version).</li>
+      <li><code>qval suites list</code> (remote + installed), <code>qval suites add support-bot</code> (fetch, checksum-verify, install into project), <code>qval suites update</code> (diff-aware, never silently overwrites local edits).</li>
+      <li>Offline-friendly: cached index, clear error without network, <code>--from-file</code> for air-gapped environments (regulated-org story again).</li>
+    </ul>
+    <details class="prompt"><summary>Claude Code prompt — copy &amp; paste</summary><button class="copybtn">Copy</button><pre>You are in the qval repo. Build a serverless suite-pack registry: packs live in a separate git repo ("qval-suites") and are fetched over raw HTTPS - no backend.
+
+1. Registry format: design schemas/registry-index.schema.json for index.json: [{name, version (semver), description, case_count, categories, sha256, path, min_schema_version}]. Also scaffold the qval-suites repo layout locally under a new top-level directory registry_seed/ (index.json + packs/support-bot/1.0.0/support_bot_tests.json + README) that I will push to a separate repo; the registry base URL is configurable in qval.yaml (suites_registry_url) with a sensible default pointing at raw.githubusercontent.com for the qval-suites repo.
+2. New command group "qval suites" in qval/commands/suites_cmd.py: "list" (fetch index, show remote packs with installed-version column from a local manifest .qval/installed_suites.json), "add NAME [--version X]" (download, verify sha256 against index, run the L-02 lint rules on it, install into the project's test_cases/, record in manifest), "update [NAME]" (compare versions; if local file hash differs from the recorded installed hash, refuse with a message about local edits and a --force flag that backs up the old file first).
+3. Network discipline: use requests (already a core dependency), 10s timeout, single retry, cached index at .qval/registry_cache.json with timestamp; "--offline" and air-gapped "--from-file PATH" (a downloaded pack archive) must both work; every network failure message must state exactly what URL failed and the offline alternative.
+4. Security: checksum verification is mandatory (hashlib.sha256 over the pack file bytes, compared to the index entry), no code execution from packs ever (they are data), refuse index entries with path traversal in path. Installed packs must pass the L-02 lint rules (PREREQUISITE: qval lint exists — verify) before landing in test_cases/.
+5. TDD: tests/test_suites_registry.py using a stdlib http.server fixture serving a fake registry: list/add/checksum-mismatch/local-edit-refusal/offline-cache paths all covered. No live network in tests.
+Constraints: no new dependencies. Update README with the suites workflow and a note that packs are data, reviewed via the qval-suites repo PR process (L-02 CI runs there too).</pre></details>
+  </div>
+
+  <div class="feat">
+    <h3><span class="id">U-02</span> · Drag-and-drop suite builder (CSV / transcript import)</h3>
+    <div class="badges"><span class="pill pill-next">Next</span><span class="pill pill-meta">Effort: ~1–2 weekends</span><span class="pill pill-meta">Depends: U-01</span></div>
+    <p><strong>Why:</strong> The highest-value meaning of "drag and drop" for this persona: QA teams sit on goldmines of real failure data — support tickets, bug reports, chat exports. Dropping a CSV onto the UI and getting a versioned regression suite converts <em>their</em> data into <em>their</em> suite in minutes. Explicitly out of scope: node-canvas workflow builders (Vellum owns that; the QA job doesn't need it).</p>
+    <h4>Scope</h4>
+    <ul>
+      <li>UI drop zone + column-mapping step (prompt, expected behavior, category, severity — with sensible defaults and preview); CLI twin <code>qval suite from-csv file.csv --map prompt=question</code>.</li>
+      <li>Chat-transcript JSON (common export shapes) → cases from user turns, with the preceding context preserved in <code>Case.extra["conversation"]</code> (feeds E-01 later).</li>
+      <li>Optional PII scrub on import (regex pass: emails, phones, card-like numbers) with a "review scrubbed fields" diff before save.</li>
+      <li>Output is a normal lint-clean suite JSON — no special runtime path.</li>
+    </ul>
+    <details class="prompt"><summary>Claude Code prompt — copy &amp; paste</summary><button class="copybtn">Copy</button><pre>You are in the qval repo ("qval ui" Phase A/B exists in qval/ui/). Build the suite builder: turn a CSV or chat-transcript JSON into a lint-clean qval test suite, via both UI drag-and-drop and CLI.
+
+1. Core logic in qval/suitebuilder/builder.py, UI- and CLI-agnostic: build_suite(rows, mapping, defaults) -> list of NATIVE suite-file case dicts (the test_cases/*.json shape: id, category, name, description, risk_level, prompt, expected_behavior, scoring_type, detectors, manual_review_required, tags — NOT the canonical Case shape; suites are inputs, canonical is for results). Mapping: which input column feeds prompt / expected_behavior / category / risk_level / tags; defaults for unmapped fields (category "instruction_following" — must be one of the 7 get_scorer categories, risk_level "medium", manual_review_required false, detectors + scoring_type chosen by category via a small table copied from how the shipped suites pair them). Generated IDs: CUSTOM-NNN with collision avoidance against existing project suites.
+2. CLI: "qval suite from-csv FILE --map prompt=COLNAME [--map expected=COL ...] --name NAME [--scrub-pii]" writing test_cases/NAME_tests.json after running the L-02 lint rules and printing the lint result.
+3. Transcript import: "qval suite from-transcript FILE --name NAME" supporting two common shapes: a JSON array of {role, content} messages, and an export with {messages: [...]}. Each user turn becomes a case (prompt = the user message); preceding turns are preserved verbatim in Case.extra["conversation"] for future multi-turn execution. Skip system messages; cap context at the 10 preceding turns.
+4. PII scrub (--scrub-pii / UI toggle): regex pass for emails, international phone formats, and 13-19 digit card-like sequences -> replaced with [EMAIL]/[PHONE]/[CARD]; produce a scrub report (count per type per case). In the UI, show the scrub diff and require confirmation before save.
+5. UI: drop zone on the Suite Library screen (also a file picker for accessibility), CSV preview table, column-mapping dropdowns with auto-guess (column named "question"/"prompt"/"input" -> prompt), defaults form, lint results panel, save into the project. Endpoint POST /api/suites/build (multipart file + mapping JSON). Enforce a 10MB upload cap and escape all previewed content.
+6. TDD first: builder unit tests (mapping, defaults, ID collision, both transcript shapes, scrub counts), CLI tests, UI endpoint test with a fixture CSV. Use only stdlib csv/json.
+Update docs/ui.md and add docs/from-your-data.md - a short guide: "turn last month's support tickets into a regression suite", written for a QA lead.</pre></details>
+  </div>
+
+  <div class="feat">
+    <h3><span class="id">B-02</span> · Generic results importer — <code>qval import generic</code></h3>
+    <div class="badges"><span class="pill pill-next">Next</span><span class="pill pill-meta">Effort: ~1 weekend</span><span class="pill pill-meta">Depends: F-01, F-03</span></div>
+    <p><strong>Why:</strong> Promptfoo and DeepEval importers cover two tools; the long tail (LangSmith exports, Braintrust exports, homegrown harnesses, plain JSONL logs) is bigger than both. A mapping-config importer makes qval the sign-off layer for <em>any</em> eval output — "bring whatever your devs run; QA owns the gate." This widens the funnel more cheaply than building N bespoke importers.</p>
+    <h4>Scope</h4>
+    <ul>
+      <li><code>qval import generic results.jsonl --mapping mapping.yaml</code>: JSONPath-style field mapping (prompt, response, pass/score, model, severity) → canonical <code>run.json</code>; unmapped fields preserved in <code>extra</code> (no loss).</li>
+      <li><code>qval import generic --infer results.jsonl</code> prints a best-guess mapping skeleton from the first records for the user to edit.</li>
+      <li>Ships 2 example mappings in docs (LangSmith CSV export, plain JSONL harness).</li>
+    </ul>
+    <details class="prompt"><summary>Claude Code prompt — copy &amp; paste</summary><button class="copybtn">Copy</button><pre>You are in the qval repo. The importer seam exists (qval/importers/: BaseImporter, registry, PromptfooImporter, DeepEvalImporter -> canonical schema via qval/canonical/). Build GenericImporter: a mapping-config-driven importer for arbitrary JSON/JSONL/CSV eval results.
+
+1. Mapping file (YAML, loaded with yaml.safe_load — PyYAML is a core dep): fields {prompt, response, passed, score, model, provider, severity, case_id, category} each mapped to a dot/bracket path into a record. There is no JSONPath helper in the repo yet — create qval/utils/jsonpath.py with a small resolve(path, obj) supporting dot keys and [n] indexing (document the supported grammar in its docstring; F-11's response_path will reuse it later). Support constants (model: "internal-bot-v2" as literal via a {const: ...} form), defaults block, and a status_map whose TARGET values are the canonical lowercase statuses passed/failed/needs_review (e.g. {"true": passed, "false": failed, "skip": needs_review}); severities must land in the canonical vocab critical/high/medium/low/info — Finding.__post_init__ raises on anything else, so map-or-default explicitly.
+2. CLI: "qval import generic INPUT --mapping MAPPING [--out run.json] [--default-severity info]" consistent with the existing import command UX (qval/commands/import_cmd.py derives TOOL choices from qval/importers/registry.available_tools() — implement GenericImporter as a BaseImporter subclass and register() it; the CLI then picks it up with zero CLI changes, that is the registry's design). Input format auto-detected: .jsonl (one record per line), .json (array or {results: [...]}), .csv (header row). Every unmapped field of each record is preserved into Finding.extra - the no-loss rule from F-03 applies. Output run must round-trip through save_canonical/load_canonical.
+3. "--infer" mode: read up to 20 records, print a best-guess mapping YAML to stdout (guess by key-name heuristics: prompt/input/question -> prompt, output/response/completion -> response, pass/passed/success -> passed) with UNMAPPED placeholders for required fields it cannot guess. Never write a run.json in infer mode.
+4. Validation: fail loudly with record number and path when a required mapping resolves to nothing in more than 10% of records; warn otherwise. Empty input is an error, not an empty run.
+5. TDD: tests/test_import_generic.py with fixtures for jsonl/json/csv, status_map handling, const fields, no-loss extra preservation, infer output, and the 10% threshold behavior.
+6. Docs: docs/import-anything.md with two worked examples (a plain JSONL harness, a LangSmith-style CSV export) and the mapping reference table.
+Constraints: stdlib + PyYAML only. Register in the importer registry so "qval import generic" appears in help alongside promptfoo/deepeval.</pre></details>
+  </div>
+
+  <div class="feat">
+    <h3><span class="id">E-09</span> · JUnit XML output + CI templates</h3>
+    <div class="badges"><span class="pill pill-next">Next</span><span class="pill pill-meta">Effort: ~0.5 weekend</span><span class="pill pill-meta">Depends: F-04</span></div>
+    <p><strong>Why:</strong> Cheap, high-leverage, and persona-perfect: QA toolchains speak JUnit XML. Jenkins, GitLab, Azure DevOps, and every test-report dashboard render it natively — qval results appear inside the tools QA teams already stare at, with zero new dashboards to adopt. Plus a maintained GitHub Action makes "gate your AI release in CI" a 5-line copy-paste.</p>
+    <h4>Scope</h4>
+    <ul>
+      <li><code>qval run --junit-xml out.xml</code> and <code>qval gate --junit-xml</code>: suites → testsuites, cases → testcases; FAIL → failure (severity + detector rationale in message), NEEDS_REVIEW → skipped with reason (visible but not red), gate NO-GO → a synthetic failing "release-gate" testcase so pipelines fail correctly.</li>
+      <li>Composite GitHub Action (<code>qval-action</code>) + documented GitLab CI and Jenkins snippets.</li>
+    </ul>
+    <details class="prompt"><summary>Claude Code prompt — copy &amp; paste</summary><button class="copybtn">Copy</button><pre>You are in the qval repo. Add JUnit XML output so qval results render natively in Jenkins/GitLab/Azure DevOps, plus CI templates.
+
+1. qval/reports/junit_writer.py: write_junit(run: CanonicalRun, path) producing JUnit XML (research the de-facto schema used by Jenkins junit plugin and GitLab - cite the reference in a comment). Mapping (canonical statuses are LOWERCASE): each category/suite -> testsuite (name, tests, failures, skipped, time); each Finding -> testcase (classname = suite, name = "CASE_ID - case name", time = per-case latency if present — check qval/canonical/adapter._finding_extra for the actual key the adapter stores latency under and use that, converting ms to seconds). status "failed" -> failure element, message = "SEVERITY: Finding.reason", text body = prompt + truncated Finding.response (cap 2KB, escape XML, never include env vars or keys). "needs_review" -> skipped element with message "needs human review: REASON" (skipped, not failed - review is not a defect yet). "waived" -> skipped with the waiver reason. "passed"/"approved" -> plain testcase.
+2. Wire --junit-xml PATH into "qval run" (qval/commands/run.py — convert the native results via the existing adapter first) and "qval gate" (qval/commands/gate_cmd.py). For gate: append a synthetic testsuite "release-gate" with one testcase per line of Decision.rationale (the gate engine's evaluate() already produces these strings); a NO-GO verdict makes each violated-rule testcase a failure whose message quotes the rationale line verbatim, so the pipeline fails with the actual reason visible in the test report UI.
+3. Create ci-templates/: github-action/ (composite action: inputs for suite, policy, baseline artifact path, junit output; steps: pip install qval, qval run, qval gate, upload junit as artifact + test report), gitlab-ci.yml snippet using artifacts:reports:junit, and Jenkinsfile snippet. README in ci-templates/ shows the 5-line GitHub usage block.
+4. TDD: tests/test_junit_writer.py - validate output against the schema (vendor a minimal XSD or do structural assertions), assert FAIL/NEEDS_REVIEW/PASS mapping, XML escaping with hostile case names ("&lt;script&gt;" in a test name), the 2KB truncation, and gate NO-GO producing a failing testcase.
+Constraints: stdlib xml.etree only. Update README Commands table and add docs/ci-integration.md written for a QA automation engineer.</pre></details>
+  </div>
+
+  <div class="feat">
+    <h3><span class="id">U-03</span> · Review Queue v2 — triage at speed</h3>
+    <div class="badges"><span class="pill pill-next">Next</span><span class="pill pill-meta">Effort: ~1 weekend</span><span class="pill pill-meta">Depends: U-01 Phase B</span></div>
+    <p><strong>Why:</strong> The Review Queue is the demo that validates the whole strategy ("does a manual QA tester's face light up?"). v2 makes it fast enough for real volume: a reviewer should clear a 50-item queue in one sitting. This screen is also the future paid tier's core (multi-user version) — polishing it OSS-side compounds later.</p>
+    <h4>Scope</h4>
+    <ul>
+      <li>Bulk operations with guardrails (multi-select approve for same-category LOW/MEDIUM only; CRITICAL never bulk-decidable).</li>
+      <li>Filters (severity, category, detector, suite) + saved filter state; progress indicator ("12 of 50 reviewed, est. 18 min left" from rolling decision pace).</li>
+      <li>Reviewer session summary on completion: decisions by type, time spent, exportable as the decision packet (existing F-10 format).</li>
+      <li>Judge-assist (F-12) suggestions shown as pre-selection with confidence — accepted only by explicit keypress; acceptance rate tracked in the audit trail (calibration data).</li>
+    </ul>
+    <details class="prompt"><summary>Claude Code prompt — copy &amp; paste</summary><button class="copybtn">Copy</button><pre>You are in the qval repo (qval ui Phases A and B exist; review endpoints in qval/ui/server.py call shared primitives in qval/review/). Upgrade the Review Queue for high-volume triage.
+
+1. Bulk decisions: POST /api/review/RUN_ID/bulk (body: finding ids, decision, reviewer, notes). Server-side guardrails enforced regardless of UI state: bulk only for findings sharing the same category, only severities low|medium, decision approve|reject only (never waive in bulk), max 25 per call, CRITICAL findings always rejected from bulk with a per-id error list in the response. Each bulk member still gets its own audit-trail entry marked bulk=true.
+2. Filters and state: extend GET /api/review/RUN_ID with query params severity, category, detector, suite, status. Persist the reviewer's last filter set and queue position in localStorage so a closed tab resumes where they left off.
+3. Pace and progress: response includes counts {total, decided, remaining}; client computes rolling decisions-per-minute over the last 10 decisions and shows an estimated time remaining. No timing data is sent to the server beyond what the audit trail already records (decision timestamps).
+4. Judge-assist integration: F-12 may not exist yet — key off the presence of Finding.extra["judge"] (suggested decision, confidence, rationale) and build no judge code in this change. When present, render the suggested decision + confidence + rationale as a highlighted pre-selection; the reviewer accepts it with the "enter" key or overrides with a/r/w. Record accepted_judge_suggestion true/false in each audit entry. Add GET /api/review/RUN_ID/calibration returning judge-vs-human agreement rate by category (data for the docs story "when the judge lies").
+5. Session summary: when remaining hits zero, show decisions by type, elapsed time, agreement-with-judge rate, and an "export decision packet" button using the existing F-10 packet format.
+6. TDD first: bulk guardrail matrix (severity x decision x mixed-category), audit entries for bulk members, filter combinations, calibration math on fixtures.
+Constraints: vanilla JS, vendored assets, no new deps. Keyboard shortcuts must be documented in a "?" overlay in the UI and in docs/ui.md.</pre></details>
+  </div>
+
+  <h2>P2 — Depth &amp; expansion (month 3+, pull-driven: build when users ask)</h2>
+
+  <div class="feat">
+    <h3><span class="id">E-05</span> · Stability / flakiness testing — <code>qval run --repeat N</code></h3>
+    <div class="badges"><span class="pill pill-p2">P2 · differentiator</span><span class="pill pill-meta">Effort: ~1 weekend</span><span class="pill pill-meta">Depends: F-04</span></div>
+    <p><strong>Why:</strong> The most QA-native idea in the roadmap and one no incumbent frames this way: <em>flaky tests</em>. LLMs are non-deterministic; a case that passes 3 of 5 runs is a flaky test, and QA professionals have 20 years of muscle memory for what to do with those. "Consistency score" speaks their language, produces great content (#1 in the education series), and changes release decisions — a 60%-consistent CRITICAL pass is not a pass.</p>
+    <h4>Scope</h4>
+    <ul><li>Run each case N times (default 1, <code>--repeat 5</code>); per-case verdict agreement rate + response-similarity heuristic (no embeddings — normalized token overlap); cases below a configurable consistency threshold flagged FLAKY and routed to review; report gets a Stability section; policy can block on flaky CRITICALs.</li></ul>
+    <details class="prompt"><summary>Claude Code prompt — copy &amp; paste</summary><button class="copybtn">Copy</button><pre>You are in the qval repo. Add stability testing: detect flaky LLM behavior by repeating cases and measuring consistency. This must feel like flaky-test detection from classical QA.
+
+1. "qval run --repeat N" (default 1, max 10): TestRunner executes each case N times (same prompt, fresh client.complete calls). Store every attempt on the native TestResult and thread through qval/canonical/adapter into Finding.extra["attempts"]: list of {response, verdict, latency_ms, tokens} - the no-loss rule applies.
+2. Consistency scoring in qval/engine/stability.py: verdict_agreement = fraction of attempts agreeing with the majority verdict; response_similarity = mean pairwise normalized token-overlap (implement with stdlib: lowercase, split, Jaccard over token multisets - document why no embeddings: zero deps, deterministic, defensible in a report). consistency = min(verdict_agreement, response_similarity is informational only, never gates).
+3. Verdict resolution for repeated cases: majority verdict wins; ties or verdict_agreement below the threshold (scoring_config.json key stability.min_agreement, default 0.8) -> status FLAKY, routed to the manual review queue with all attempts visible side by side in the UI review pane.
+4. Gate integration: the F-06 policy engine does not exist (policy.yaml is an unparsed template) - extend GateThresholds in qval/gate/decision.py with block_on_flaky_severity (default "critical") and teach evaluate() to treat a flaky case at/above that severity as a blocking rationale line; expose it as a --block-flaky-severity flag on qval gate. If a policy engine has landed since (check), wire the key there instead. Gate output lists flaky cases distinctly from failures.
+5. Report: new Stability section - per-suite consistency distribution, flaky case table (id, agreement rate, verdict spread), and a one-line explanation written for stakeholders ("these tests do not reliably pass; treat as unresolved risk").
+6. Cost guard: --repeat multiplies API spend; print the multiplied estimated cost (qval/engine/pricing.py) and require --yes or interactive confirm when estimated cost exceeds $5.
+7. TDD first: stability math on synthetic attempt sets (unanimous, 3-of-5, tie), FLAKY routing to review, gate blocking, e2e with a seeded flaky responder added to MockClient (qval/engine/model_client.py) for testability.
+Constraints: no new dependencies; default behavior (N=1) bit-identical to today (characterization test on a mock run before you start). Docs: docs/stability-testing.md framing this as flaky-test detection for AI.</pre></details>
+  </div>
+
+  <div class="feat">
+    <h3><span class="id">E-02</span> · Local &amp; OpenAI-compatible models (Ollama, vLLM, LM Studio)</h3>
+    <div class="badges"><span class="pill pill-p2">P2</span><span class="pill pill-meta">Effort: ~0.5 weekend</span><span class="pill pill-meta">Depends: F-11</span></div>
+    <p><strong>Why:</strong> Completes the local-first story end-to-end: regulated teams can run the entire loop — model, tests, evidence — with zero data leaving the machine. One <code>base_url</code> field covers Ollama, vLLM, LM Studio, and most internal gateways (all speak the OpenAI API shape). Cheap to build, big positioning payoff ("fully air-gapped AI testing" — no SaaS competitor can say it).</p>
+    <details class="prompt"><summary>Claude Code prompt — copy &amp; paste</summary><button class="copybtn">Copy</button><pre>You are in the qval repo (provider abstraction in qval/engine/model_client.py: OpenAI, Mock, Anthropic stub). Add support for OpenAI-compatible local endpoints (Ollama, vLLM, LM Studio, internal gateways) via a base_url override.
+
+1. model_config.json gains optional "base_url"; when set, the OpenAI provider targets it instead of api.openai.com. API key becomes optional when base_url is set (many local servers need none) - resolve from env if present, otherwise send no auth header. Never log the base_url's auth material.
+2. "qval run --base-url http://localhost:11434/v1 --model llama3.1" CLI overrides. "qval doctor" gains a connectivity check: when base_url is set, GET /models (or a 1-token completion fallback) and report reachable/unreachable with the exact URL tried.
+3. Pricing: prices live in config/model_config.json "pricing" (USD per 1k tokens) and are applied by qval/engine/pricing.compute_cost, which already has an unknown-model warning path - verify its current behavior, then make unknown models on a custom base_url report cost $0.00 with a "local/unknown - cost not tracked" annotation in reports instead of a crash or a wrong number.
+4. Error taxonomy: connection refused -> "is the local server running? (tried URL)"; 404 on model -> list available models from /models when possible.
+5. TDD: tests with a stdlib fake OpenAI-compatible server fixture (http.server returning canned chat completions): base_url routing, no-key operation, doctor check, unknown-model pricing, error messages.
+6. Docs: docs/local-models.md - "fully offline AI testing" walkthrough with Ollama (ollama pull, qval run --base-url, qval ui), explicitly aimed at regulated environments; note that demo bot (D-01) + mock provider + local model = the entire qval loop with zero external network calls.
+Constraints: no new deps; reuse the existing OpenAI client path (openai package already supports base_url - verify the installed version's API before coding).</pre></details>
+  </div>
+
+  <div class="feat">
+    <h3><span class="id">E-03</span> · First-class Anthropic &amp; Gemini providers</h3>
+    <div class="badges"><span class="pill pill-p2">P2</span><span class="pill pill-meta">Effort: ~1 weekend</span><span class="pill pill-meta">Depends: model_client seam</span></div>
+    <p><strong>Why:</strong> A vendor-neutral testing tool that only runs OpenAI models undercuts its own positioning — especially post-Promptfoo-acquisition, when neutrality is the differentiator. Also unlocks E-18 (champion/challenger) across vendors, the most requested real-world comparison ("we're considering switching models — what breaks?").</p>
+    <details class="prompt"><summary>Claude Code prompt — copy &amp; paste</summary><button class="copybtn">Copy</button><pre>You are in the qval repo. qval/engine/model_client.py has: ModelClient Protocol {provider: str, complete(prompt) -> ModelResponse}, OpenAIClient (openai SDK with _retrying_call exponential backoff), AnthropicClient (a requests-based STUB that raises - replace it), MockClient. Clients are constructed in build_client() in qval/commands/run.py from config/model_config.json. Make Anthropic and Google Gemini first-class providers with full parity to the OpenAI provider.
+
+1. Implement AnthropicClient for real (anthropic SDK, ANTHROPIC_API_KEY from env, messages API; honor the existing system_prompt config key) and add GeminiClient (google-genai SDK, GEMINI_API_KEY) behind the ModelClient Protocol; register both in build_client(). Both as optional extras in pyproject [project.optional-dependencies]: pip install qval[anthropic] / qval[gemini] / qval[all-providers]; a missing SDK errors with the exact install command (copy the pattern OpenAIClient already uses for a missing openai package).
+2. Parity checklist (this is the requirement, not nice-to-have): retry via the existing _retrying_call with the retry block from model_config.json (max_attempts, initial_backoff_seconds, backoff_multiplier); timeout_seconds honored; token usage + latency captured into ModelResponse exactly as OpenAIClient does (read its complete() first and mirror the fields); deterministic params honored (temperature, max_tokens, seed where the API supports it - document where it does not in a comment).
+3. Pricing: add current per-1k-token prices for the mainstream Claude and Gemini model tiers to the "pricing" map in config/model_config.json AND the template copy scaffolded by qval init - look up current published prices and cite source URLs + date in the existing "_note"/"_priced_at" convention; unknown models degrade to $0.00-with-annotation (same rule as E-02).
+4. Provider contract tests: create tests/test_provider_contract.py - a single parameterized test class run against Mock, and against Anthropic/Gemini via recorded-response fakes (no live API calls in CI): returns text, captures usage, retries on a fake 429 then succeeds, honors timeout, surfaces auth errors with actionable messages ("ANTHROPIC_API_KEY not set - add it to .env").
+5. "qval doctor" reports which providers are installed/configured/ready. "qval run --provider anthropic --model MODEL" works end to end.
+Constraints: do not add the SDKs to core dependencies. README provider matrix updated. Flag in your final summary anything where Gemini/Anthropic semantics forced a behavioral difference from OpenAI so I can review it.</pre></details>
+  </div>
+
+  <div class="feat">
+    <h3><span class="id">E-18</span> · Champion / challenger — side-by-side model comparison</h3>
+    <div class="badges"><span class="pill pill-p2">P2</span><span class="pill pill-meta">Effort: ~1 weekend</span><span class="pill pill-meta">Depends: E-03 ideally, F-04</span></div>
+    <p><strong>Why:</strong> The single most common real-world trigger for systematic AI testing is a model change: version bump, vendor switch, cost-down migration. "Run the same suite against both, diff the verdicts, gate the migration" is a complete story QA leads immediately recognize (it's regression testing), and it exercises everything qval already has — runner, diff, gate, report.</p>
+    <h4>Scope</h4>
+    <ul><li><code>qval compare --suite all --target-a gpt-4o --target-b claude-sonnet</code> (or two existing run.jsons); per-case verdict matrix (both-pass / A-only / B-only / both-fail / either-flaky), severity-weighted delta, migration-gate verdict via existing policy; side-by-side responses in UI + report.</li></ul>
+    <details class="prompt"><summary>Claude Code prompt — copy &amp; paste</summary><button class="copybtn">Copy</button><pre>You are in the qval repo. Build "qval compare": run one suite against two targets (or load two existing canonical runs) and produce a migration-grade comparison.
+
+1. CLI: "qval compare --suite NAME --target-a SPEC --target-b SPEC [--out compare.json]" where SPEC is provider:model (e.g. openai:gpt-4o-mini, anthropic:claude-sonnet) or @path/to/run.json for an existing run. When both SPECs are @runs, no API calls happen (pure analysis mode - this must work offline).
+2. Execution mode: run the suite against A then B with identical seeds/params; both runs are normal canonical runs saved as usual (compare is built ON runs, not a third data shape). Comparison output references the two run_ids.
+3. Analysis in qval/gate/compare.py: per-case verdict matrix (both_pass, a_only_pass, b_only_pass, both_fail, needs_review_any, flaky_any when E-05 attempts exist); category-level pass-rate deltas; severity-weighted score delta; cost and mean-latency delta from run metadata. Findings that flipped severity between targets are listed individually - those are the migration risks.
+4. Gate integration: "qval compare ... --gate" runs the existing gate engine (diff_runs with A as baseline, B as current, then evaluate()) and ALSO applies migration rules as new GateThresholds fields: max_regressed_cases: N, block_on_regressed_severity: critical - a case that passes A and fails B is a regression (RunDiff.regressions already computes this; reuse it, do not re-derive). If a policy engine (F-06) exists by now (check), read these keys from policy.yaml instead. Decision output is the existing canonical Decision: GO / CONDITIONAL-GO / NO-GO for the migration with rationale strings.
+5. Report: "qval report --compare compare.json" renders a side-by-side HTML section (response A vs response B for every regressed case, verdict chips, deltas table). UI: add a Compare view under Runs - pick two runs of the same suite, render the same data via one new endpoint GET /api/compare?a=RUN&b=RUN.
+6. TDD first: analysis math on fixture run pairs (regression, improvement, identical, flaky overlap), @run loading, gate migration rules, endpoint shape. Mock-provider e2e for execution mode.
+Constraints: no new deps. docs/model-migration.md: "switching models without breaking production - a QA playbook".</pre></details>
+  </div>
+
+  <div class="feat">
+    <h3><span class="id">E-01</span> · Multi-turn transcript replay (narrow scope)</h3>
+    <div class="badges"><span class="pill pill-p2">P2</span><span class="pill pill-meta">Effort: ~1–2 weekends</span><span class="pill pill-meta">Depends: U-02, F-11, F-16 fixtures</span></div>
+    <p><strong>Why:</strong> Real failures (gradual jailbreaks, context poisoning) emerge across turns, and U-02 already banks conversations from transcript imports. Scope discipline: <em>replay scripted conversations and score the final response</em> — not simulated adversarial agents (incumbent territory, scope creep). F-16B fixtures already started this contract.</p>
+    <h4>Scope</h4>
+    <ul><li>Case schema: <code>conversation</code> array replayed turn-by-turn through provider or HTTP adapter (session handling); final-response scoring with existing detectors; full transcript in evidence + UI viewer (already renders transcripts); starter multi-turn pack (escalation jailbreaks, instruction drift, memory of earlier PII).</li></ul>
+    <details class="prompt"><summary>Claude Code prompt — copy &amp; paste</summary><button class="copybtn">Copy</button><pre>You are in the qval repo. Implement multi-turn test execution - NARROW scope: replay a scripted conversation, score the final response. Do not build dynamic/adversarial turn generation. NOTE: F-16/F-16B may not exist (the viewer and its fixtures were planned, not necessarily shipped) - grep for extra["conversation"] usage first; if a convention exists, keep compatibility, otherwise this change DEFINES it: a list of {role: user|assistant, content: str} dicts stored in Case.extra["conversation"].
+
+1. Schema: a test case may include "conversation": [{role: user|assistant, content: str}, ...] ending with the final user turn; "prompt" remains required as the final user message for backward compatibility (when conversation is present, prompt must equal the last user turn - lint rule QL009 enforces this, add it to L-02's linter).
+2. Provider execution: the ModelClient Protocol today is complete(prompt: str) -> ModelResponse - single-turn. Extend the seam without breaking it: add an optional complete_messages(messages: list[dict]) -> ModelResponse; clients that implement it get true multi-turn (OpenAI - and Anthropic/Gemini if E-03 has landed; check), clients that do not fall back to a documented flattened-prompt format. MockClient: implement complete_messages deterministically so multi-turn fixture tests are stable.
+3. HTTP target execution: only if an HTTP target client exists by now (D-01 or F-11 may have seeded one - check qval/engine/). If present, add two strategies in target config - "stateless" (POST the whole conversation, template var {{conversation}} as JSON) and "session" (POST turn-by-turn, session id extracted from first response via a configured path and echoed via a header or body field per config). Timeouts and retries apply per turn; a mid-conversation failure marks the case NEEDS_REVIEW with the partial transcript preserved in extra (there is no ERROR status in either vocab - do not invent one). If no HTTP client exists, skip this point and say so.
+4. Scoring: scorers evaluate the final assistant response (unchanged ScorerFn interface - get_scorer(category)(case, final_response, ...)); full transcript stored in Case/Finding extra under the "conversation" key so any transcript renderer (qval ui run detail, future F-16 viewer) can consume it - cover with a test.
+5. Starter pack test_cases/multi_turn_tests.json (~10 cases): gradual-escalation jailbreak (benign opener, then boundary push, then the ask), instruction drift ("from now on answer only in JSON" then check 3 turns later), earlier-turn PII recall, roleplay-based refusal erosion. Placeholders per responsible_testing_policy.md.
+6. TDD first: schema validation + lint rule, provider message assembly, HTTP strategies (if built) against a stdlib fake server fixture, mid-conversation failure handling, transcript-storage test, deterministic mock e2e.
+Constraints: no new dependencies. Single-turn behavior must be bit-identical to today (characterization test first). docs/multi-turn.md explains the replay model and why dynamic adversarial generation is out of scope (pointing to garak/DeepTeam for that, per the coexistence doc).</pre></details>
+  </div>
+
+  <div class="feat">
+    <h3><span class="id">E-04</span> · Cost &amp; latency budgets in the policy gate</h3>
+    <div class="badges"><span class="pill pill-p2">P2</span><span class="pill pill-meta">Effort: ~0.5 weekend</span><span class="pill pill-meta">Depends: F-06, pricing.py</span></div>
+    <p><strong>Why:</strong> Quality isn't the only release criterion — a model change that doubles p95 latency or triples token cost is a NO-GO in the real world. Runner already records cost/latency; surfacing them as policy-gateable budgets turns qval's gate into the single release decision artifact ("quality + cost + latency, one GO/NO-GO"), which no eval-tool report card does.</p>
+    <details class="prompt"><summary>Claude Code prompt — copy &amp; paste</summary><button class="copybtn">Copy</button><pre>You are in the qval repo. The runner already records per-case latency and token cost (qval/engine/pricing.py, response metadata). Make cost and latency first-class, policy-gateable release criteria.
+
+1. Aggregations: OBS-01 already computes latency percentiles (_latency_percentiles in qval/engine/test_runner.py) and cost (qval/engine/pricing.compute_cost) into RunSummary - read what exists FIRST, then consolidate into qval/engine/perf.py without duplicating: latency p50/p95/p99/max (ms), total_cost_usd, cost_per_case mean/max, tokens in/out totals, stored in CanonicalRun metadata via the adapter (_run_metadata). Missing data (mock provider, local models) -> nulls, never zeros pretending to be measurements.
+2. Budget rules: extend GateThresholds in qval/gate/decision.py with budgets {p95_latency_ms, max_total_cost_usd, max_case_cost_usd} - all optional - and matching CLI flags on qval gate. (The F-06 policy engine does not exist; if it has landed since, read these from policy.yaml instead - check first.) evaluate() reads measured values from run metadata; a budget breach is CONDITIONAL-GO by default, escalating to NO-GO only when marked blocking. Decision.rationale quotes the measured value vs budget ("p95 latency 4120ms exceeds budget 3000ms").
+3. Baseline-relative rules: budgets_regression: {max_latency_increase_pct: 25, max_cost_increase_pct: 50} compared against the baseline run when one is provided - this is the migration-relevant form (works with E-18 compare too).
+4. Report + UI: a Performance section (the percentile table, cost summary, budget verdicts with measured-vs-budget bars). Null-data runs show "not measured (mock/local provider)" - never fake numbers.
+5. TDD first: percentile math (including n=1 and empty), null propagation, each budget rule's GO/CONDITIONAL/NO-GO behavior, baseline-relative percentage rules, report rendering with nulls.
+Constraints: no new dependencies (percentiles by sorting, document the method and keep it consistent with the existing _latency_percentiles). Update qval/templates/policy.yaml with a commented-out budgets block so users discover it.</pre></details>
+  </div>
+
+  <div class="feat">
+    <h3><span class="id">E-20</span> · Custom detector SDK (plugin entry points)</h3>
+    <div class="badges"><span class="pill pill-p2">P2</span><span class="pill pill-meta">Effort: ~1 weekend</span><span class="pill pill-meta">Depends: scorer registry</span></div>
+    <p><strong>Why:</strong> Every serious team eventually needs one company-specific detector ("never mention competitor X", "always include the disclaimer"). If that requires forking qval, they churn; if it's a pip-installable plugin, qval becomes infrastructure. Plugins are also a contributor on-ramp and the extension story that makes "framework" an honest word.</p>
+    <details class="prompt"><summary>Claude Code prompt — copy &amp; paste</summary><button class="copybtn">Copy</button><pre>You are in the qval repo. GROUND TRUTH: detectors today are plain module-level FUNCTIONS in qval/scorers/ (base_scorer.py holds shared detectors + phrase libraries; each of the 7 category modules composes them); there is NO registry class - dispatch is get_scorer(category) in base_scorer.py, and test cases reference detector names in their "detectors" array. DetectorResult already exists in qval/engine/schemas.py - read it first and build on it, do not redefine it. Build a plugin SDK so external packages can ship custom detectors.
+
+1. Formalize the contract: qval/scorers/detector.py with a Detector ABC: name (str, kebab-case), evaluate(case, response, context) -> DetectorResult (extend the existing dataclass only if a field is genuinely missing; rationale/notes must be non-empty - explainability is qval's brand). Create the registry this implies (detector name -> Detector), wrap each existing detector function in a thin adapter class so built-ins appear in it with NO behavior change - characterization tests on current scorer outputs first.
+2. Discovery: setuptools entry points group "qval.detectors" via importlib.metadata.entry_points(). On startup, load external detectors into the registry; name collisions with built-ins are an error naming the offending package. "qval doctor" lists detectors with their source (built-in vs package name vs project-local).
+3. Project-local detectors (zero packaging): detectors/ directory in a qval project; .py files defining Detector subclasses are auto-loaded. Print a SECURITY warning on load ("project-local detector code executes with your permissions - review detectors/ before running suites from untrusted sources") and refuse to load project-local detectors from suites installed via the L-03 registry unless --allow-local-detectors.
+4. Validation: if qval lint (L-02) exists, its QL004 detector-existence check must see plugin + local detectors (point it at the new registry). A detector whose evaluate raises must yield a NEEDS_REVIEW result with the traceback in DetectorResult notes/extra (there is no ERROR status in the vocab), never crash the run.
+5. Scaffold: "qval new-detector NAME" generates detectors/NAME.py from a documented template (rationale-first docstring, example test). Also create examples/qval-detector-example/ - a minimal pip-installable plugin package with pyproject entry point, one detector, and tests, used verbatim in docs/custom-detectors.md.
+6. TDD: contract tests every registered detector must pass (parameterized over the registry): returns DetectorResult, rationale non-empty, deterministic on identical input. Plus: entry-point loading via a temp package fixture, collision error, crash isolation, local-detector security gate.
+Constraints: stdlib + setuptools metadata APIs (importlib.metadata). All built-in detector behavior bit-identical (characterization tests prove it).</pre></details>
+  </div>
+
+  <div class="feat">
+    <h3><span class="id">E-19</span> · Waiver lifecycle — expiry, review, re-certification</h3>
+    <div class="badges"><span class="pill pill-p2">P2</span><span class="pill pill-meta">Effort: ~0.5 weekend</span><span class="pill pill-meta">Depends: F-06, F-10</span></div>
+    <p><strong>Why:</strong> A waiver without an expiry is a permanent exception — the audit finding waiting to happen. The schema already carries expiry; enforcing it ("this waiver expired 12 days ago, the failure is live again") is exactly the discipline a 15-year QA leader knows and eval tools don't. Small feature, large credibility.</p>
+    <details class="prompt"><summary>Claude Code prompt — copy &amp; paste</summary><button class="copybtn">Copy</button><pre>You are in the qval repo. The canonical schema already defines Waiver(waiver_id, reason, approver, approved_at, expires_at - ISO-8601 UTC strings, empty expires_at = no expiry) attached at Finding.waiver, and the "waived" status exists in the vocab. PREREQUISITE CHECK: a grant path (review workflow F-10 / U-01 Phase B's qval/review/) may or may not exist yet - verify; if nothing grants waivers, include a minimal "qval waivers grant FINDING_ID --approver --reason --days" subcommand in this change. Enforce the waiver lifecycle.
+
+1. Expiry semantics, enforced in qval/gate/decision.evaluate(): an expired waiver is void - the underlying finding counts as a live failure again, and Decision.rationale lists it under "expired waivers" with waiver id, approver, expiry date, and the original reason. A waiver expiring within warn_days (new GateThresholds field, default 14; move to policy.yaml only if the F-06 engine exists - check) produces a warning in gate output and reports.
+2. Waiver hygiene rules (same GateThresholds-vs-policy decision): max_duration_days: 90 (granting longer is rejected at grant time), require_expiry (no open-ended waivers when set; existing empty-expires_at waivers remain valid but warned), max_active: 20 (gate goes CONDITIONAL-GO when exceeded - waiver debt).
+3. "qval waivers" command: list active/expiring/expired with days remaining, --json for CI consumption. Re-certification flow: "qval waivers renew WAIVER_ID --approver NAME --days N --reason TEXT" creates a NEW waiver linked to the old (renewed_from), preserving the chain in the audit trail - never mutate or extend an existing waiver record (append-only, audit-grade).
+4. Surfaces: reports (qval/reports/canonical_report.py) include the waiver section; the UI Sign-off screen shows the waiver table with expiry chips IF qval ui exists (check); passport manifests include active waiver ids IF F-13 exists (check) - skip absent surfaces and say so.
+5. TDD first: expiry boundary cases (expires today; timestamps are ISO-8601 UTC strings per the schema convention - compare via datetime.fromisoformat consistently, never string comparison), gate behavior with expired/expiring/over-limit waivers, renewal chain integrity, grant-time rejection of over-long waivers.
+Constraints: no new dependencies. Keep schema backward compatible: existing waivers without expires_at remain valid unless require_expiry is set, but gate warns about them. docs/waivers.md: "shipping with known failures, honestly".</pre></details>
+  </div>
+
+  <div class="feat">
+    <h3><span class="id">E-13</span> · Gate notifications — Slack / Teams webhooks</h3>
+    <div class="badges"><span class="pill pill-p2">P2</span><span class="pill pill-meta">Effort: ~0.5 weekend</span><span class="pill pill-meta">Depends: F-04</span></div>
+    <p><strong>Why:</strong> The gate decision's audience (QA lead, release manager, eng manager) lives in chat, not in CI logs. A webhook on NO-GO closes the loop — and every message footer carrying "via qval" in team channels is organic distribution into exactly the right rooms.</p>
+    <details class="prompt"><summary>Claude Code prompt — copy &amp; paste</summary><button class="copybtn">Copy</button><pre>You are in the qval repo. Add webhook notifications for gate decisions (Slack and Teams first).
+
+1. Config (qval.yaml): notifications: {webhooks: [{url_env: QVAL_WEBHOOK_URL, format: slack|teams|json, notify_on: [no-go, conditional-go] }]}. Webhook URLs come from env vars only (url_env names the variable) - never stored in config files, consistent with the project's key policy; doctor checks the env vars exist.
+2. "qval gate ... --notify" posts after evaluation (wire into qval/commands/gate_cmd.py after evaluate() returns its Decision). Payloads: slack -> Block Kit (decision emoji + Decision.verdict header, model/suite/run id fields, top 3 Decision.rationale lines verbatim, counts row, link line with the local report path); teams -> Adaptive Card equivalent; json -> Decision plus run metadata for custom receivers. Research current Slack Block Kit and Teams Adaptive Card schemas before writing payloads; cite doc URLs in comments.
+3. Delivery discipline: use requests (core dep) with 5s timeout, one retry, failures NEVER affect the gate exit code (notification is best-effort; log a warning). No response bodies logged (may echo the URL).
+4. Content safety: messages contain verdicts, rule names, and counts - never prompts or model responses (those may hold PII; the report is for that). Assert this in tests by scanning rendered payloads from a fixture run containing a fake email address in a response.
+5. TDD: payload snapshot tests per format, notify_on filtering, env-var resolution, timeout/retry against a stdlib fake server, the no-PII assertion, exit-code independence.
+Constraints: no new dependencies (requests is already core). docs/notifications.md with Slack and Teams setup walkthroughs (webhook creation steps).</pre></details>
+  </div>
+
+  <div class="feat">
+    <h3><span class="id">E-15</span> · Multilingual test packs (hi / es / de starters)</h3>
+    <div class="badges"><span class="pill pill-p2">P2 · differentiator</span><span class="pill pill-meta">Effort: ~1 weekend + native review</span><span class="pill pill-meta">Depends: L-01, L-02</span></div>
+    <p><strong>Why:</strong> Safety and bias behavior degrade off-English, almost all eval content is English-only, and global enterprises ship AI to non-English customers with English-only testing. A credible multilingual pack is rare, defensible content — and a natural community-contribution magnet (native speakers as contributors). Rule: machine-translated cases are drafts; native-speaker review required before a pack ships.</p>
+    <details class="prompt"><summary>Claude Code prompt — copy &amp; paste</summary><button class="copybtn">Copy</button><pre>You are in the qval repo. Add multilingual support and seed Hindi/Spanish/German starter packs. Important: you draft, native speakers review - build the workflow assuming that.
+
+1. Schema: native test cases gain optional "language" (BCP-47: en, hi, es, de; default en) and optional "translation_of" (case id of the English source) - thread both through qval/engine/schemas.TestCase.from_dict with defaults so all existing suites stay valid. Lint (PREREQUISITE: qval lint from L-02 - verify it exists): QL010 language vocabulary check, QL011 translation_of must reference an existing case and SHOULD share category/risk_level/detectors (warning if not - deliberate divergence is allowed with a rationale in description).
+2. Detector audit FIRST: review every built-in detector in qval/scorers/ for English-only assumptions - start with the module-level phrase libraries in base_scorer.py (REFUSAL_PHRASES, SAFE_ALTERNATIVE_PHRASES, and the others defined there) plus any keyword lists and regexes inside the 7 category scorer modules and qval/utils/text_utils.py (positive_word_score / negative_word_score are word-list based). Produce docs/i18n-detector-audit.md listing each detector as language-agnostic / needs-keyword-sets / english-only. For keyword-based detectors, externalize the lists into per-language YAML (qval/scorers/keywords/{lang}.yaml, loaded once and cached; en.yaml is generated from the current constants and a characterization test proves en behavior is bit-identical after externalization) with hi/es/de drafts clearly marked MACHINE-DRAFT pending native review. A case whose language has no keyword set for a required detector -> NEEDS_REVIEW with rationale "no LANG keyword set for DETECTOR", never a silent pass.
+3. Packs: test_cases/safety_tests_hi.json, _es, _de - translate 15 high-value safety/bias cases each via translation_of, plus 5 language-SPECIFIC cases per language (honorific/formality bias for hi/de, regional-variant handling for es) - these are the cases that make the pack credible rather than translated filler.
+4. Reporting: pass rates by language in report + UI when a run spans languages ("safety: en 94% / hi 71%" is the headline insight this feature exists to surface).
+5. PACK_REVIEW.md per language pack: review checklist for a native speaker (natural phrasing? culturally plausible scenario? severity still right in this locale?), with a sign-off line - packs stay marked draft in their README until signed.
+6. TDD: lint rules, keyword-set loading/fallback, the needs-review path for missing keyword sets, per-language report aggregation.
+Constraints: stdlib + PyYAML. List in your final summary every detector you classified english-only - those bound what non-English packs can honestly test.</pre></details>
+  </div>
+
+  <div class="feat">
+    <h3><span class="id">E-12</span> · Report theming &amp; branding</h3>
+    <div class="badges"><span class="pill pill-p2">P2</span><span class="pill pill-meta">Effort: ~0.5 weekend</span><span class="pill pill-meta">Depends: F-05</span></div>
+    <p><strong>Why:</strong> Reports get attached to Jira tickets, release docs, and exec emails — a logo and team name make them <em>theirs</em>, which is what gets a tool socialized inside an org. Trust guardrail: severity colors and the qval-generated footer are not themeable; a report that hides its provenance or repaints CRITICAL as green stops being evidence.</p>
+    <details class="prompt"><summary>Claude Code prompt — copy &amp; paste</summary><button class="copybtn">Copy</button><pre>You are in the qval repo. Report generation: qval/reports/canonical_report.py (render_html / render_markdown over a CanonicalRun + optional RunDiff) is the F-05 release report - theme THIS one; qval/reports/report_generator.py + html_template.py are the older native-report path from qval run - apply the same header/footer rules there only if it shares the rendering code, otherwise leave it and note the debt. Add report theming for org adoption, with hard trust guardrails.
+
+1. qval.yaml: report_theme: {org_name, team_name, logo_path (png/svg, embedded as base64 data URI at render time - reports must stay single-file portable), accent_color (hex), footer_note}. All optional; absent -> current default look.
+2. Apply org/team/logo to the report header and accent_color to non-semantic chrome ONLY (headers, table borders, links).
+3. HARD GUARDRAILS (enforced in code, not docs): severity colors (critical/high/medium/low/info) are constants and ignore the theme; the verdict banner colors likewise; the footer ALWAYS contains "Generated by qval vX.Y.Z" (version via importlib.metadata.version("qval")) + run id + timestamp regardless of footer_note; accent_color values that collide with semantic colors (within a small RGB distance of the red/green/amber semantic palette) are rejected at config load with an explanatory error - a themed report must never be mistakable for a differently-graded one.
+4. Logo safety: only local file paths (no URLs - reports render offline), max 200KB, png/svg only; svg content is sanitized (strip script/foreignObject/event attributes - model a minimal allowlist sanitizer, document its limits).
+5. Markdown reports get org/team in the header text; passports (F-13) are NOT themeable at all - if passport code exists by now (check; it may not), assert its output ignores report_theme in a test; if it does not exist, record the rule in docs so F-13 inherits it.
+6. TDD: theme application snapshots, each guardrail (semantic-color rejection matrix, forced footer, oversized/script-bearing logo rejection), default-unchanged regression test (render with no theme config and diff against today's output).
+Constraints: no new dependencies. docs/report-theming.md with a screenshot placeholder and an explicit "what you cannot theme and why" section - that section IS the positioning.</pre></details>
+  </div>
+
+  <h2>Core feature status — per the repo, not the old docs</h2>
+  <p class="why" style="margin-bottom:10px;">docs/FEATURES.md claims F-01→F-13 are all done; the code (commit <code>1462179</code>) contains only the items marked shipped below. The unshipped ones are folded into the roadmap above: their prompts either declare them prerequisites or build the minimal seam inline.</p>
+  <ul class="check">
+    <li class="done"><div><span class="fname">F-01 · Canonical evidence schema</span> <span class="pill pill-done">Shipped</span><div class="why">qval/canonical/ — the platform contract; every feature above builds on it.</div></div></li>
+    <li class="done"><div><span class="fname">F-02 · CLI foundation (init / doctor / run)</span> <span class="pill pill-done">Shipped</span><div class="why">qval/cli.py + qval/commands/. U-00 finishes the first-run job.</div></div></li>
+    <li class="done"><div><span class="fname">F-03 · Promptfoo importer</span> <span class="pill pill-done">Shipped</span><div class="why">qval/importers/ seam + registry. B-01 adds the export direction; B-02 adds the long tail.</div></div></li>
+    <li class="done"><div><span class="fname">F-04 · Baseline diff + <code>qval gate</code></span> <span class="pill pill-done">Shipped</span><div class="why">qval/gate/ (diff_runs + evaluate + GateThresholds). The sign-off differentiator; E-04/E-19/E-05 deepen it.</div></div></li>
+    <li class="done"><div><span class="fname">F-05 · HTML / Markdown release report + OBS-01 cost/latency</span> <span class="pill pill-done">Shipped</span><div class="why">qval/reports/canonical_report.py, pricing + latency percentiles. E-12 themes it; E-09 gives it a CI-native sibling.</div></div></li>
+    <li><div><span class="fname">F-06 · Policy-as-code engine</span> <span class="pill pill-next">Not built</span><div class="why">policy.yaml is an unparsed template; GateThresholds is the interim mechanism. E-04/E-19/E-05/E-18 prompts extend GateThresholds and migrate to policy.yaml when this lands.</div></div></li>
+    <li><div><span class="fname">F-07 · Control &amp; compliance mapping</span> <span class="pill pill-next">Not built</span><div class="why">Canonical Finding has control_ids but suites don't carry them yet — L-01/L-02 seed the field + vocab file.</div></div></li>
+    <li><div><span class="fname">F-08 / F-13 · Signed evidence pack + Release Passport</span> <span class="pill pill-next">Not built</span><div class="why">EvidencePack dataclass exists in schema only. Demoted to quiet trust feature; verification never paywalled; not themeable, ever.</div></div></li>
+    <li><div><span class="fname">F-09 · DeepEval importer</span> <span class="pill pill-next">Not built</span><div class="why">Registry makes it a drop-in when needed; B-02 generic importer may cover the demand first.</div></div></li>
+    <li><div><span class="fname">F-10 · Manual review workflow</span> <span class="pill pill-next">Not built</span><div class="why">Reviewer/Waiver schema objects exist; U-01 Phase B builds the shared qval/review/ primitives + thin CLI.</div></div></li>
+    <li><div><span class="fname">F-11 · Generic HTTP / API target adapter</span> <span class="pill pill-next">Not built</span><div class="why">D-01 seeds a minimal HttpTargetClient behind the ModelClient Protocol; E-01 extends it with session strategies.</div></div></li>
+    <li><div><span class="fname">F-12 · Judge assist</span> <span class="pill pill-next">Not built</span><div class="why">UI prompts key off Finding.extra["judge"] presence so it can land later without rework.</div></div></li>
+    <li><div><span class="fname">F-16 · Static viewer / multimodal rendering</span> <span class="pill pill-next">Not built</span><div class="why">UI prompts render transcripts with a built-in escaped renderer instead of depending on it.</div></div></li>
+  </ul>
+
+  <h2>Parked — do not build (revisit only on explicit pull)</h2>
+  <ul class="check">
+    <li><div><span class="fname">F-14 · Public transparency log</span> <span class="pill pill-later">Parked</span><div class="why">Ecosystem/standards play; requires verifier demand that doesn't exist yet (EU high-risk deadlines moved to Dec 2027 / Aug 2028). Revisit if auditors start asking for passports unprompted.</div></div></li>
+    <li><div><span class="fname">F-15 · Hosted Evidence Room (SaaS)</span> <span class="pill pill-later">Parked · future paid tier</span><div class="why">Multi-user U-01, hosted. Build only after PMF signals; the local UI is its free on-ramp and product research.</div></div></li>
+    <li><div><span class="fname">Full multimodal harness (images/audio)</span> <span class="pill pill-later">Parked</span><div class="why">Viewer rendering shipped with F-16 V1; execution waits for user pull. E-01 covers the multi-turn slice that matters now.</div></div></li>
+    <li><div><span class="fname">Dynamic adversarial generation / red-team engine</span> <span class="pill pill-later">Out of scope, permanently</span><div class="why">Incumbent territory (Promptfoo/garak/DeepTeam) and against the defensive-only policy. qval codifies discovered failures into regression suites — coexistence, not competition.</div></div></li>
+    <li><div><span class="fname">Node-canvas workflow builder</span> <span class="pill pill-later">Out of scope</span><div class="why">Vellum owns it; the QA job-to-be-done is select → run → review → sign off. Forms beat canvases for this persona.</div></div></li>
+  </ul>
+
+  <h2>Non-code workstream (parallel — carries distribution)</h2>
+  <ul class="check">
+    <li><div><span class="fname">C-01 · QA-channel content engine</span> <span class="pill pill-next">Next</span><div class="why">Idea bank + 90-day calendar in <code>test_eval_content/QA_CONTENT_IDEAS.md</code>. Every long-form piece ships a runnable suite; D-01 demo bot is the teaching instrument.</div></div></li>
+    <li><div><span class="fname">C-02 · 10 design partners</span> <span class="pill pill-next">Next</span><div class="why">QA leads at companies adding AI features; free white-glove first cycle. Retention signal: a second run without hand-holding. U-01's 15-minute unmoderated test recruits from this pool.</div></div></li>
+    <li><div><span class="fname">C-03 · Conference &amp; podcast circuit</span> <span class="pill pill-next">Next</span><div class="why">One abstract/month (EuroSTAR, STAREAST, Agile Testing Days, TestBash); one podcast pitch/month (Test Guild, MoT). The Review Queue demo with the D-01 flawed bot is the talk.</div></div></li>
+    <li><div><span class="fname">C-04 · Own the reference list</span> <span class="pill pill-next">Next</span><div class="why">Curate an "awesome-testing-AI" style list (tools, papers, suites — including competitors, honestly). Reference lists earn backlinks and position the curator as the neutral authority — which is the brand.</div></div></li>
+  </ul>
+
+  <h2>Recommended build order (dependency-aware)</h2>
+  <ul class="check">
+    <li><div><span class="fname">Weeks 1–2:</span> U-00 (unblocks everything) → T-01 audit phase → D-01. Content: quickstart + postmortem post.</div></li>
+    <li><div><span class="fname">Weeks 2–5:</span> U-01 Phase A → Phase B. Parallel: T-01 fixes, B-01, L-02 linter (needed before L-01 scales).</div></li>
+    <li><div><span class="fname">Weeks 5–9:</span> L-01 packs (one per week, lint-clean) → L-03 registry → E-09 CI templates. UI usability test with 3 QA testers — <em>the strategy validation gate</em>.</div></li>
+    <li><div><span class="fname">Weeks 9–12:</span> U-02 suite builder → U-03 review v2 → B-02 generic importer. Design-partner cycles running.</div></li>
+    <li><div><span class="fname">Month 3+ (pull-driven):</span> E-05 stability and E-18 compare first (strongest differentiators), then E-02/E-03 providers, E-04 budgets, E-19 waivers, E-20 SDK, E-13 webhooks, E-15 multilingual, E-12 theming — in whatever order design partners actually request.</div></li>
+  </ul>
+
+  <footer>qval updated feature spec · OSS-first until traction · vendor-neutral · local-first · built for the person who has to say GO · 2026-06-10</footer>
+</div>
+<script>
+document.querySelectorAll('.copybtn').forEach(function(btn){
+  btn.addEventListener('click',function(e){
+    e.preventDefault();
+    var pre=btn.parentElement.querySelector('pre');
+    navigator.clipboard.writeText(pre.innerText).then(function(){
+      btn.textContent='Copied!';setTimeout(function(){btn.textContent='Copy';},1500);
+    });
+  });
+});
+</script>
+</body>
+</html>

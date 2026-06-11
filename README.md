@@ -197,16 +197,43 @@ can be overridden per-project with `test_cases_dir`, `config_dir`, and
 `outputs_dir` keys in `qval.yaml`. Running outside any project prints an
 actionable error pointing you to `qval init`.
 
+## qval ui
+
+`qval ui` starts a local-first web console for browsing suites, launching mock,
+provider, or HTTP-adapter runs, polling progress, and inspecting canonical
+findings. Flask is optional:
+
+```bash
+pip install -e ".[ui]"
+qval ui
+qval ui --port 9000
+```
+
+The server binds to `127.0.0.1` only and does not enable CORS. API keys are read
+from environment variables by the existing providers; the UI API rejects request
+bodies that contain an `api_key` field.
+
+Screenshot placeholder:
+
+![qval ui screenshot placeholder](docs/images/qval-ui-placeholder.png)
+
 ## Commands
 
 | Command | Status |
 |---------|--------|
 | `qval init` | scaffold a runnable project (qval.yaml, policy.yaml, config/, test_cases/, outputs/) |
 | `qval doctor` | validate environment + resolve project root and paths |
-| `qval run` | run the native eval suite |
-| `qval import` | import Promptfoo results into a canonical run.json (F-03) |
-| `qval gate` | diff vs baseline → GO/CONDITIONAL-GO/NO-GO decision (F-04) |
+| `qval run` | run the native eval suite (provider: mock / openai / http target adapter, F-11) |
+| `qval ui` | local web console for suite browsing, run launch, progress, and findings detail |
+| `qval import` | import Promptfoo (F-03) or DeepEval (F-09) results into a canonical run.json |
+| `qval gate` | diff vs baseline → GO/CONDITIONAL-GO/NO-GO decision, policy-as-code (F-04, F-06) |
+| `qval map` | map findings to OWASP-LLM / NIST AI RMF controls + coverage matrix (F-07) |
 | `qval report` | shareable HTML/Markdown release report (F-05) |
+| `qval pack` | seal a run into a signed, tamper-evident evidence pack (F-08) |
+| `qval review` | human review workflow: queue, assign, approve/reject/waive, export packet (F-10) |
+| `qval judge` | LLM judge-assist: pre-triage borderline needs_review findings, human override wins (F-12) |
+| `qval passport` | seal a run into a signed, independently verifiable AI Release Passport (F-13) |
+| `qval verify` | independently verify a passport's integrity + provenance against a published key (F-13) |
 
 ## Configure your API key
 
@@ -328,7 +355,7 @@ A smoke test exercises the runner end-to-end against the mock provider, so a cle
 - Drift tracking — compare a current run against a baseline run.
 - HTML diff view between two runs.
 - Anthropic, Gemini, and local-model providers (currently only OpenAI is wired; Anthropic is stubbed).
-- Coverage matrix: which OWASP-LLM / NIST AI RMF risks are exercised by which tests.
+- Coverage matrix: which OWASP-LLM / NIST AI RMF risks are exercised by which tests. ✅ shipped via `qval map` (F-07).
 
 ## License
 

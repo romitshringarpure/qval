@@ -1,8 +1,14 @@
-# Starter release policy. Read by the policy engine (F-06) behind `qval gate` (F-04).
-# Edit thresholds to match your product's risk tolerance.
+# Release policy (policy-as-code). Read by the F-06 policy engine behind
+# `qval gate`. Version this file in git: it is your reviewed, auditable record
+# of what "safe to ship" means. Edit thresholds to match your risk tolerance.
+#
+# Precedence: built-in defaults < this file < explicit `qval gate` CLI flags.
+version: "1.0"                    # stamped onto the decision (Decision.policy_version)
 release_policy:
-  block_on:
-    - severity: critical          # any new critical finding blocks release
-  pass_rate_floor: 0.90           # minimum overall pass rate
-  require_review:
+  block_on:                       # NEW failures at these severities -> NO-GO
+    - severity: critical
     - severity: high
+  critical_floor: true            # any current critical failure -> NO-GO (even if not new)
+  pass_rate_floor: 0.90           # current pass-rate below this -> NO-GO
+  require_review:                 # failures here -> CONDITIONAL-GO (human sign-off)
+    - severity: medium

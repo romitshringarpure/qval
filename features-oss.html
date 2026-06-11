@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>qval — OSS Core · Build Checklist</title>
+<style>
+  :root{--fg:#0f172a;--muted:#475569;--border:#e2e8f0;--bg:#f8fafc;--card:#fff;--accent:#2563eb;--done-bg:#dcfce7;--done-fg:#166534;--next-bg:#fef3c7;--next-fg:#92400e;--later-bg:#e2e8f0;--later-fg:#475569;}
+  *{box-sizing:border-box;}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--fg);background:var(--bg);margin:0;padding:32px;line-height:1.5;}
+  .wrap{max-width:880px;margin:0 auto;}
+  h1{font-size:30px;margin:0 0 4px;}
+  h2{font-size:20px;margin:28px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--border);}
+  .subtitle{color:var(--muted);margin-bottom:8px;font-size:16px;}
+  .meta{color:var(--muted);font-size:13px;margin-bottom:16px;}
+  .meta a{color:var(--accent);text-decoration:none;font-weight:600;}
+  .legend{font-size:13px;color:var(--muted);margin:6px 0 14px;}
+  .hero-box{border:2px solid var(--accent);border-radius:10px;padding:12px 15px;margin:14px 0;background:#eff6ff;font-size:14px;}
+  .hero-box strong{color:#1e3a8a;}
+  ul.check{list-style:none;padding-left:0;margin:0;}
+  ul.check li{display:flex;align-items:flex-start;gap:11px;padding:10px 13px;margin-bottom:7px;background:var(--card);border:1px solid var(--border);border-radius:8px;}
+  ul.check li input{margin-top:3px;width:18px;height:18px;flex:none;accent-color:var(--accent);cursor:pointer;}
+  ul.check li.done{background:#f0fdf4;border-color:#bbf7d0;}
+  .fname{font-weight:600;}
+  .fname .id{font-family:ui-monospace,Menlo,monospace;}
+  .why{color:var(--muted);font-size:13px;margin-top:2px;}
+  .pill{display:inline-block;padding:1px 8px;border-radius:999px;font-size:11px;font-weight:600;margin-left:6px;vertical-align:middle;}
+  .pill-done{background:var(--done-bg);color:var(--done-fg);}
+  .pill-next{background:var(--next-bg);color:var(--next-fg);}
+  .pill-later{background:var(--later-bg);color:var(--later-fg);}
+  code{font-family:ui-monospace,Menlo,monospace;font-size:0.9em;background:#f1f5f9;padding:1px 4px;border-radius:4px;}
+  footer{color:var(--muted);font-size:12px;margin-top:32px;padding-top:14px;border-top:1px solid var(--border);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>qval — OSS Core · Build Checklist</h1>
+  <div class="subtitle"><strong>Free, forever.</strong> Produces &amp; proves the AI Release Passport: <code>import &rarr; gate &rarr; passport &rarr; verify</code>.</div>
+  <div class="meta">Enterprise / web app &rarr; <a href="features-enterprise.html">features-enterprise.html</a> &middot; Master: docs/FEATURES-OSS.md &middot; Internal — gitignored &middot; Updated 2026-06-06</div>
+  <div class="legend">☑ = shipped &nbsp; ☐ = to build &nbsp; <span class="pill pill-next">Next</span> recommended order &nbsp; <span class="pill pill-later">Later</span> deferred. List is in recommended build order — re-tick / re-order as you decide.</div>
+
+  <div class="hero-box"><strong>Flagship = items 6–7:</strong> reach <code>qval passport create</code> + <code>qval verify</code> ASAP. The ✓ VERIFIED → one-byte edit → ✗ TAMPERED demo is "why qval exists." Everything above is prerequisite; below widens reach.</div>
+
+  <h2>Checklist (recommended order)</h2>
+  <ul class="check">
+    <li class="done"><input type="checkbox" checked><div><span class="fname"><span class="id">F-01</span> · Canonical evidence schema</span> <span class="pill pill-done">Done</span><div class="why">Shared data model; everything depends on it.</div></div></li>
+    <li class="done"><input type="checkbox" checked><div><span class="fname"><span class="id">F-02</span> · CLI foundation (init / doctor / run)</span> <span class="pill pill-done">Done</span><div class="why">Install + first-run.</div></div></li>
+    <li class="done"><input type="checkbox" checked><div><span class="fname"><span class="id">F-03</span> · Promptfoo importer</span> <span class="pill pill-done">Done</span><div class="why">Zero switching cost; pluggable seam.</div></div></li>
+    <li class="done"><input type="checkbox" checked><div><span class="fname"><span class="id">F-04</span> · Baseline diff + <code>qval gate</code></span> <span class="pill pill-done">Done</span><div class="why">GO / CONDITIONAL / NO-GO decision.</div></div></li>
+    <li class="done"><input type="checkbox" checked><div><span class="fname"><span class="id">F-05</span> · HTML / Markdown release report</span> <span class="pill pill-done">Done</span><div class="why">Shareable output beyond the CLI.</div></div></li>
+    <li class="done"><input type="checkbox" checked><div><span class="fname"><span class="id">F-08</span> · Signed evidence pack</span> <span class="pill pill-done">Done</span><div class="why">SHA-256 manifest + HMAC bundle (internal archive). Asymmetric Ed25519 signing is F-13.</div></div></li>
+    <li class="done"><input type="checkbox" checked><div><span class="fname"><span class="id">F-13</span> · AI Release Passport — <code>passport create</code> + <code>verify</code></span> <span class="pill pill-done">Done · FLAGSHIP</span><div class="why">The hero. Signed credential anyone verifies offline against the published key. ✓ VERIFIED / ✗ TAMPERED demo works.</div></div></li>
+    <li class="done"><input type="checkbox" checked><div><span class="fname"><span class="id">F-07</span> · Control &amp; compliance mapping</span> <span class="pill pill-done">Done</span><div class="why">Full OWASP LLM Top 10, NIST AI RMF, EU AI Act evidence areas, ISO 42001 scaffold, and internal policy controls.</div></div></li>
+    <li class="done"><input type="checkbox" checked><div><span class="fname"><span class="id">F-06</span> · Policy-as-code engine</span> <span class="pill pill-done">Done</span><div class="why">Release thresholds as version-controlled YAML.</div></div></li>
+    <li class="done"><input type="checkbox" checked><div><span class="fname"><span class="id">F-09</span> · DeepEval importer</span> <span class="pill pill-done">Done</span><div class="why">Second eval-tool on-ramp.</div></div></li>
+    <li class="done"><input type="checkbox" checked><div><span class="fname"><span class="id">F-11</span> · Generic HTTP / API target adapter</span> <span class="pill pill-done">Done</span><div class="why">Eval any internal AI service.</div></div></li>
+    <li class="done"><input type="checkbox" checked><div><span class="fname"><span class="id">F-12</span> · Judge assist (borderline cases)</span> <span class="pill pill-done">Done</span><div class="why">Triage NEEDS_REVIEW; human final.</div></div></li>
+    <li class="done"><input type="checkbox" checked><div><span class="fname"><span class="id">F-10</span> · Manual review workflow (CLI)</span> <span class="pill pill-done">Done</span><div class="why"><code>qval review</code> queue/assign/approve/reject/waive + JSON/CSV packet. Multi-user UI is paid (Enterprise).</div></div></li>
+    <li><input type="checkbox"><div><span class="fname"><span class="id">F-16</span> · Multi-turn &amp; multimodal</span> <span class="pill pill-later">Later</span><div class="why">Conversation + image cases. Lowest urgency.</div></div></li>
+  </ul>
+  <div class="legend">Shipped underneath (native eval-framework core): 70 test cases · 16 detectors · 3 providers · cost/latency observability · severity-weighted pass rate · CI.</div>
+  <footer>qval OSS roadmap · internal · gitignored · mirrors docs/FEATURES-OSS.md · F-13 = Passport (canonical)</footer>
+</div>
+</body>
+</html>

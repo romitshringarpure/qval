@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>qval — local console</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230e8a5f'/%3E%3Ctext x='16' y='22' font-family='sans-serif' font-size='18' font-weight='800' fill='white' text-anchor='middle'%3Eq%3C/text%3E%3C/svg%3E">
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="brand-mark">q</div>
+          <div>
+            <div class="brand-title">qval</div>
+            <div class="brand-subtitle">local console</div>
+          </div>
+        </div>
+        <nav class="nav" aria-label="Main">
+          <button class="nav-button active" data-view="suites" type="button">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2.5 3.5h11M2.5 8h11M2.5 12.5h7"/></svg>
+            Suites
+          </button>
+          <button class="nav-button" data-view="runs" type="button">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 2.8v10.4l8.5-5.2L4 2.8z" stroke-linejoin="round"/></svg>
+            Runs
+          </button>
+          <button class="nav-button" data-view="review" type="button">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="5.5"/><path d="M5.8 8.2l1.6 1.6 3-3.4"/></svg>
+            Review Queue
+          </button>
+          <button class="nav-button" data-view="signoff" type="button">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M8 1.8l5 2v4c0 3-2.2 5.3-5 6.4-2.8-1.1-5-3.4-5-6.4v-4l5-2z" stroke-linejoin="round"/></svg>
+            Sign-off
+          </button>
+        </nav>
+        <div class="side-note">
+          <div class="project-card">
+            <div class="muted-label">Project</div>
+            <div id="project-root" class="project-root"></div>
+          </div>
+          <div class="local-note"><strong>Local-first.</strong> Runs, evidence, and decisions stay on this machine. Nothing is uploaded.</div>
+        </div>
+      </aside>
+
+      <main class="main">
+        <section id="view-suites" class="view active">
+          <div class="view-header">
+            <div>
+              <h1>Suite Library</h1>
+              <p>Browse test coverage and pick the suites for your next run.</p>
+            </div>
+            <button id="run-selected" class="primary-button" type="button">Run selected</button>
+          </div>
+          <div id="suite-list" class="suite-list"></div>
+        </section>
+
+        <section id="view-runs" class="view">
+          <div class="view-header">
+            <div>
+              <h1>Runs</h1>
+              <p>Point qval at a target, run your suites, and inspect every finding.</p>
+            </div>
+            <button id="refresh-runs" class="secondary-button" type="button">Refresh</button>
+          </div>
+
+          <div class="run-layout">
+            <section class="panel">
+              <h2>New run</h2>
+              <form id="run-form" class="run-form">
+                <div class="field">
+                  <label>Suites</label>
+                  <div id="suite-picker" class="suite-picker"></div>
+                </div>
+
+                <fieldset class="field">
+                  <legend>Target</legend>
+                  <div class="segmented" id="target-segment">
+                    <label class="checked"><input type="radio" name="target-type" value="mock" checked>Mock</label>
+                    <label><input type="radio" name="target-type" value="provider">Provider</label>
+                    <label><input type="radio" name="target-type" value="http">HTTP</label>
+                  </div>
+                  <div class="field-hint" id="target-hint">Offline mock provider — deterministic, no API key needed.</div>
+                </fieldset>
+
+                <div id="provider-fields" class="target-fields hidden">
+                  <div class="field">
+                    <label for="provider-name">Provider</label>
+                    <input id="provider-name" type="text" value="openai">
+                  </div>
+                  <div class="field">
+                    <label for="provider-model">Model</label>
+                    <input id="provider-model" type="text" placeholder="gpt-4o-mini">
+                    <div class="field-hint">API key is read from your environment (.env) — never entered here.</div>
+                  </div>
+                </div>
+
+                <div id="http-fields" class="target-fields hidden">
+                  <div class="field">
+                    <label for="http-url">Endpoint URL</label>
+                    <input id="http-url" type="url" placeholder="https://service.example/chat">
+                  </div>
+                  <div class="field">
+                    <label for="http-method">Method</label>
+                    <select id="http-method"><option>POST</option><option>GET</option></select>
+                  </div>
+                  <div class="field">
+                    <label for="http-headers">Headers (JSON)</label>
+                    <textarea id="http-headers" rows="3" placeholder='{"Authorization": "Bearer ${TOKEN}"}'></textarea>
+                  </div>
+                  <div class="field">
+                    <label for="http-body">Body template</label>
+                    <textarea id="http-body" rows="3">{"input": "{{input}}"}</textarea>
+                    <div class="field-hint">{{input}} is replaced with each test prompt.</div>
+                  </div>
+                  <div class="field">
+                    <label for="http-response-path">Response path</label>
+                    <input id="http-response-path" type="text" placeholder="$.message.content">
+                    <div class="field-hint">Where the reply text lives in the JSON response.</div>
+                  </div>
+                </div>
+
+                <div class="inline-fields">
+                  <div class="field">
+                    <label for="run-limit">Max cases <span class="field-hint" style="display:inline">(optional)</span></label>
+                    <input id="run-limit" type="number" min="1" placeholder="all">
+                  </div>
+                  <div class="field">
+                    <label for="run-seed">Seed</label>
+                    <input id="run-seed" type="number" min="1" value="42">
+                  </div>
+                </div>
+
+                <button class="primary-button" type="submit">Start run</button>
+              </form>
+
+              <div id="progress-panel" class="progress-panel hidden">
+                <div class="progress-meta">
+                  <span id="progress-status"></span>
+                  <span id="progress-count"></span>
+                </div>
+                <div class="progress-track"><div id="progress-bar" class="progress-bar"></div></div>
+                <div id="progress-case" class="progress-case"></div>
+              </div>
+            </section>
+
+            <section class="panel">
+              <h2>Run history</h2>
+              <div id="run-history" class="run-history"></div>
+            </section>
+          </div>
+
+          <section id="run-detail" class="run-detail hidden"></section>
+        </section>
+
+        <section id="view-review" class="view">
+          <div class="view-header">
+            <div>
+              <h1>Review Queue</h1>
+              <p>Adjudicate NEEDS_REVIEW findings — every decision lands in the audit trail.</p>
+            </div>
+            <button id="refresh-review" class="secondary-button" type="button">Refresh queue</button>
+          </div>
+
+          <div class="toolbar-row">
+            <label><span>Run</span><select id="review-run-select"></select></label>
+            <label><span>Baseline</span><select id="review-baseline-select"></select></label>
+            <label class="grow"><span>Reviewer</span><input id="reviewer-name" type="text" placeholder="Your name (recorded with each decision)"></label>
+          </div>
+
+          <div class="review-layout">
+            <section class="panel">
+              <div class="queue-header">
+                <h2>Queue</h2>
+                <span id="review-count" class="count-chip"></span>
+              </div>
+              <div id="review-queue" class="review-queue"></div>
+            </section>
+            <section id="review-detail" class="panel review-detail-pane"></section>
+          </div>
+          <div class="kbd-hints">
+            <span><kbd>j</kbd>/<kbd>k</kbd> next / previous</span>
+            <span><kbd>a</kbd> approve</span>
+            <span><kbd>r</kbd> reject</span>
+            <span><kbd>w</kbd> waive…</span>
+          </div>
+        </section>
+
+        <section id="view-signoff" class="view">
+          <div class="view-header">
+            <div>
+              <h1>Sign-off</h1>
+              <p>The release decision: gate verdict, regressions vs baseline, exportable evidence.</p>
+            </div>
+            <button id="evaluate-gate" class="secondary-button" type="button">Re-evaluate</button>
+          </div>
+
+          <div class="toolbar-row">
+            <label><span>Run</span><select id="signoff-run-select"></select></label>
+            <label><span>Baseline</span><select id="signoff-baseline-select"></select></label>
+          </div>
+
+          <section id="gate-panel" class="run-detail hidden"></section>
+        </section>
+      </main>
+    </div>
+
+    <dialog id="decision-modal" class="decision-modal">
+      <form method="dialog" id="decision-form">
+        <h3 id="decision-title">Decision</h3>
+        <input id="decision-kind" type="hidden">
+        <div class="field">
+          <label for="decision-reviewer">Reviewer</label>
+          <input id="decision-reviewer" type="text" placeholder="Your name">
+        </div>
+        <div class="field">
+          <label for="decision-notes">Notes</label>
+          <textarea id="decision-notes" rows="4" placeholder="Why this decision is the right call — auditors read this later."></textarea>
+        </div>
+        <div class="field" id="decision-expiry-wrap">
+          <label for="decision-expiry">Waiver expiry</label>
+          <input id="decision-expiry" type="date">
+        </div>
+        <div class="modal-actions">
+          <button class="secondary-button" value="cancel" type="submit">Cancel</button>
+          <button id="submit-decision" class="primary-button" value="default" type="button">Save decision</button>
+        </div>
+      </form>
+    </dialog>
+
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
+  </body>
+</html>
