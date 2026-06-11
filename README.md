@@ -181,26 +181,28 @@ Requires Python 3.9 or newer. Editable install puts a `qval` command on your PAT
 
 ## Quickstart
 
-Run from the cloned repo checkout — `qval run` reads the repo's `test_cases/` and
-`config/`, so a clone is runnable end-to-end with no API key via `--mock`:
+`qval init` scaffolds a complete, runnable project in any empty directory —
+config, starter suites, and an `outputs/` sink. No repo checkout, no API key:
 
 ```bash
-qval init        # scaffold qval.yaml, policy.yaml, and suites/ (see note below)
-qval doctor      # validate environment + config (may print WARN; that's fine)
+mkdir my-eval && cd my-eval
+qval init        # scaffold qval.yaml, policy.yaml, config/, test_cases/, outputs/
+qval doctor      # validate environment + print the resolved project root and paths
 qval run --mock  # run the native eval suite offline against the mock provider
 ```
 
-> **Note:** `qval init` scaffolds a project layout, but `qval run` currently
-> resolves `test_cases/` and `config/` relative to the repo checkout. A freshly
-> `qval init`'d project in an arbitrary empty directory is scaffolded but not yet
-> runnable end-to-end; project-aware path resolution is a planned follow-up.
+`qval` finds your project by walking up from the current directory to the
+nearest `qval.yaml` (git-style), so it works from any subdirectory. Path roots
+can be overridden per-project with `test_cases_dir`, `config_dir`, and
+`outputs_dir` keys in `qval.yaml`. Running outside any project prints an
+actionable error pointing you to `qval init`.
 
 ## Commands
 
 | Command | Status |
 |---------|--------|
-| `qval init` | scaffold a project (qval.yaml, policy.yaml, suites/) |
-| `qval doctor` | validate environment + config |
+| `qval init` | scaffold a runnable project (qval.yaml, policy.yaml, config/, test_cases/, outputs/) |
+| `qval doctor` | validate environment + resolve project root and paths |
 | `qval run` | run the native eval suite |
 | `qval import` | import Promptfoo results into a canonical run.json (F-03) |
 | `qval gate` | diff vs baseline → GO/CONDITIONAL-GO/NO-GO decision (F-04) |

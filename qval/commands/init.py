@@ -7,11 +7,20 @@ from pathlib import Path
 
 TEMPLATES_DIR = Path(__file__).resolve().parent.parent / "templates"
 
-# (template relative path -> destination relative path)
+# (template relative path -> destination relative path). A scaffolded project
+# is fully runnable end-to-end with no edits (U-00): config, starter suites,
+# and an outputs/ sink are all created.
 SCAFFOLD = [
     ("qval.yaml", "qval.yaml"),
     ("policy.yaml", "policy.yaml"),
-    ("suites/example.json", "suites/example.json"),
+    ("env.example", ".env.example"),
+    ("config/model_config.json", "config/model_config.json"),
+    ("config/scoring_config.json", "config/scoring_config.json"),
+    ("config/risk_matrix.json", "config/risk_matrix.json"),
+    ("test_cases/instruction_following_tests.json",
+     "test_cases/instruction_following_tests.json"),
+    ("test_cases/safety_tests.json", "test_cases/safety_tests.json"),
+    ("outputs/.gitignore", "outputs/.gitignore"),
 ]
 
 

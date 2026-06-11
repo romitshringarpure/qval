@@ -103,7 +103,7 @@ def test_percentiles_empty():
 
 def test_summary_token_totals_under_mock():
     from qval.main import main
-    from qval.utils.file_loader import OUTPUTS_DIR
+    from qval.utils.file_loader import outputs_dir
     import json
 
     exit_code = main([
@@ -111,7 +111,7 @@ def test_summary_token_totals_under_mock():
     ])
     assert exit_code in (0, 1)
 
-    evidence_root = OUTPUTS_DIR / "evidence"
+    evidence_root = outputs_dir() / "evidence"
     latest = sorted([p for p in evidence_root.iterdir() if p.is_dir()])[-1]
     summary = json.loads((latest / "summary.json").read_text(encoding="utf-8"))
 

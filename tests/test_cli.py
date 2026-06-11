@@ -15,7 +15,13 @@ def test_init_creates_scaffold(tmp_path):
     assert rc == 0
     assert (tmp_path / "qval.yaml").is_file()
     assert (tmp_path / "policy.yaml").is_file()
-    assert (tmp_path / "suites" / "example.json").is_file()
+    assert (tmp_path / ".env.example").is_file()
+    assert (tmp_path / "config" / "model_config.json").is_file()
+    assert (tmp_path / "config" / "scoring_config.json").is_file()
+    assert (tmp_path / "config" / "risk_matrix.json").is_file()
+    assert (tmp_path / "outputs" / ".gitignore").is_file()
+    starter_suites = list((tmp_path / "test_cases").glob("*_tests.json"))
+    assert len(starter_suites) >= 2
 
 
 def test_init_refuses_overwrite_without_force(tmp_path):
@@ -38,8 +44,8 @@ def test_shipped_template_suites_are_schema_valid():
     from qval.engine.schemas import TestCase
     from qval.commands.init import TEMPLATES_DIR
 
-    suite_files = list((TEMPLATES_DIR / "suites").glob("*.json"))
-    assert suite_files, "no template suites found"
+    suite_files = list((TEMPLATES_DIR / "test_cases").glob("*_tests.json"))
+    assert suite_files, "no starter suites found"
     for suite_file in suite_files:
         cases = json.loads(suite_file.read_text(encoding="utf-8"))
         assert isinstance(cases, list) and cases
@@ -65,10 +71,12 @@ def test_doctor_fails_when_openai_key_missing(tmp_path, monkeypatch):
     assert rc != 0
 
 
-def test_doctor_warns_on_missing_config(tmp_path, monkeypatch):
+def test_doctor_fails_when_no_project(tmp_path, monkeypatch, capsys):
     monkeypatch.chdir(tmp_path)  # no qval.yaml here or above (isolated tmp)
     rc = main(["doctor"])
-    assert rc == 0  # missing config is a WARN, not a failure
+    # U-00: no discoverable project is a hard FAIL with an actionable message.
+    assert rc != 0
+    assert "No qval project found" in capsys.readouterr().out
 
 
 def test_doctor_fails_on_unparseable_config(tmp_path, monkeypatch):

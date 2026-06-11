@@ -21,7 +21,7 @@ from qval.engine.schemas import (
 )
 from qval.reports.html_template import HTML_SHELL
 from qval.utils.text_utils import truncate
-from qval.utils.file_loader import OUTPUTS_DIR, write_text
+from qval.utils.file_loader import outputs_dir, write_text
 
 
 # ---------------------------------------------------------------------------
@@ -64,8 +64,9 @@ def _cat(category: str) -> str:
 def generate_reports(summary: RunSummary, results: list[TestResult],
                      risk_matrix: dict, scoring_config: dict) -> tuple[Path, Path]:
     """Write Markdown and HTML reports for a run; return (md_path, html_path)."""
-    reports_dir = OUTPUTS_DIR / "reports"
-    evidence_dir = OUTPUTS_DIR / "evidence" / summary.run_id
+    out = outputs_dir()
+    reports_dir = out / "reports"
+    evidence_dir = out / "evidence" / summary.run_id
 
     md = render_markdown(summary, results, risk_matrix, scoring_config)
     html_doc = render_html(summary, results, risk_matrix, scoring_config)

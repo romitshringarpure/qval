@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Iterable
 
 from qval.engine.schemas import TestResult, RunSummary, STATUS_NEEDS_REVIEW
-from qval.utils.file_loader import OUTPUTS_DIR, write_csv, write_json, write_text
+from qval.utils.file_loader import outputs_dir, write_csv, write_json, write_text
 
 
 MANUAL_REVIEW_FIELDS = [
@@ -26,10 +26,11 @@ class ResponseLogger:
 
     def __init__(self, run_id: str):
         self.run_id = run_id
-        self.evidence_dir = OUTPUTS_DIR / "evidence" / run_id
-        self.results_dir = OUTPUTS_DIR / "results"
-        self.raw_dir = OUTPUTS_DIR / "raw_responses"
-        self.logs_dir = OUTPUTS_DIR / "logs"
+        out = outputs_dir()
+        self.evidence_dir = out / "evidence" / run_id
+        self.results_dir = out / "results"
+        self.raw_dir = out / "raw_responses"
+        self.logs_dir = out / "logs"
         for d in (self.evidence_dir, self.results_dir, self.raw_dir, self.logs_dir):
             d.mkdir(parents=True, exist_ok=True)
 

@@ -5,9 +5,9 @@ import argparse
 import importlib
 import os
 import sys
-from pathlib import Path
 
 from qval.config import find_config_file, load_project_config, ProjectConfigError
+from qval.project import find_project_root, NO_PROJECT_MESSAGE
 
 PASS, WARN, FAIL = "PASS", "WARN", "FAIL"
 
@@ -44,8 +44,22 @@ def run(args: argparse.Namespace) -> int:
             _line(FAIL, f"dependency '{mod}' missing (pip install {hint})")
             failed = True
 
-    # Project config. Missing is OK (WARN); present-but-unparseable is a FAIL
-    # and we then skip checks that depend on config values.
+    # Project discovery. No project is a hard FAIL with an actionable message;
+    # everything downstream depends on a resolved root (U-00).
+    project = find_project_root()
+    if project is None:
+        _line(FAIL, NO_PROJECT_MESSAGE)
+        print()
+        print("doctor: one or more checks FAILED")
+        return 1
+    _line(PASS, f"project root: {project.root}")
+    _line(PASS, f"  config dir:     {project.config_dir}")
+    _line(PASS, f"  test cases dir: {project.test_cases_dir}")
+    _line(PASS, f"  outputs dir:    {project.outputs_dir}")
+    _line(PASS, f"  policy:         {project.policy_path}")
+
+    # Project config. Present-but-unparseable is a FAIL and we then skip checks
+    # that depend on config values.
     cfg_path = find_config_file()
     config_ok = True
     cfg: dict = {}
@@ -80,7 +94,7 @@ def run(args: argparse.Namespace) -> int:
     if not config_ok:
         _line(WARN, "outputs dir check skipped (config did not parse)")
     else:
-        outputs = Path(cfg.get("outputs_dir", "outputs"))
+        outputs = project.outputs_dir
         try:
             outputs.mkdir(parents=True, exist_ok=True)
             probe = outputs / ".doctor_write_test"

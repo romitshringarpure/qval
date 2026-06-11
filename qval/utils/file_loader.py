@@ -13,10 +13,21 @@ from pathlib import Path
 from typing import Any, Iterable
 
 
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
-CONFIG_DIR = PROJECT_ROOT / "config"
-TEST_CASES_DIR = PROJECT_ROOT / "test_cases"
-OUTPUTS_DIR = PROJECT_ROOT / "outputs"
+# Path roots are resolved per-call from the active project (U-00) rather than
+# baked in at import time, so a scaffolded project elsewhere on disk works.
+def config_dir() -> Path:
+    from qval.project import get_active_project
+    return get_active_project().config_dir
+
+
+def test_cases_dir() -> Path:
+    from qval.project import get_active_project
+    return get_active_project().test_cases_dir
+
+
+def outputs_dir() -> Path:
+    from qval.project import get_active_project
+    return get_active_project().outputs_dir
 
 
 SUITE_FILE_MAP = {
@@ -61,22 +72,22 @@ def write_csv(path: Path, rows: Iterable[dict], fieldnames: list[str]) -> None:
 
 
 def load_model_config() -> dict:
-    return load_json(CONFIG_DIR / "model_config.json")
+    return load_json(config_dir() / "model_config.json")
 
 
 def load_scoring_config() -> dict:
-    return load_json(CONFIG_DIR / "scoring_config.json")
+    return load_json(config_dir() / "scoring_config.json")
 
 
 def load_risk_matrix() -> dict:
-    return load_json(CONFIG_DIR / "risk_matrix.json")
+    return load_json(config_dir() / "risk_matrix.json")
 
 
 def load_test_suite(suite: str) -> list[dict]:
     """Load a single suite of test cases by name."""
     if suite not in SUITE_FILE_MAP:
         raise ValueError(f"Unknown suite: {suite!r}. Valid: {ALL_SUITES}")
-    path = TEST_CASES_DIR / SUITE_FILE_MAP[suite]
+    path = test_cases_dir() / SUITE_FILE_MAP[suite]
     data = load_json(path)
     if not isinstance(data, list):
         raise ValueError(f"Test suite file {path} must contain a JSON list")
@@ -84,10 +95,17 @@ def load_test_suite(suite: str) -> list[dict]:
 
 
 def load_all_suites() -> list[dict]:
-    """Load every suite, in deterministic order."""
+    """Load every suite that exists, in deterministic order.
+
+    A scaffolded project ships a subset of the seven suites; absent files are
+    skipped so ``qval run`` (which defaults to ``--suite all``) works on a fresh
+    project without requiring every category to be present.
+    """
+    base = test_cases_dir()
     cases: list[dict] = []
     for suite in ALL_SUITES:
-        cases.extend(load_test_suite(suite))
+        if (base / SUITE_FILE_MAP[suite]).is_file():
+            cases.extend(load_test_suite(suite))
     return cases
 
 

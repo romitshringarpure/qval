@@ -1,5 +1,9 @@
-# Qval project config. See: qval doctor
+# Qval project config. This file marks the project root — `qval` discovers it
+# by walking up from your current directory. See: qval doctor
 provider: mock          # mock | openai
 model: gpt-4o-mini      # model name (ignored when provider is mock)
-suites_dir: suites      # where test suites live (not yet consumed by `qval run` — planned)
-outputs_dir: outputs    # where runs, reports, evidence are written
+
+# Path overrides (relative to this file). Defaults shown; uncomment to change.
+# test_cases_dir: test_cases   # where test suites (*_tests.json) live
+# config_dir: config           # model_config.json, scoring_config.json, risk_matrix.json
+# outputs_dir: outputs         # where runs, reports, and evidence are written
