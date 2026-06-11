@@ -189,6 +189,9 @@ def execute_run(*, suites: list[str] | None = None, suite: str | None = None,
     canonical = run_summary_to_canonical(summary, results)
     _apply_controls(canonical)
     save_canonical(canonical, canonical_run_path(run_id))
+    # Twin copy under results/ — the documented hand-off artifact for the gate
+    # (F-04) and report (F-05) CLIs, and the U-00 acceptance criterion.
+    save_canonical(canonical, outputs_dir() / "results" / f"{run_id}.canonical.json")
 
     return RunExecution(
         run_id=run_id,

@@ -108,15 +108,17 @@ def load_test_suite(suite: str) -> list[dict]:
 
 
 def load_all_suites() -> list[dict]:
-    """Load every suite that exists, in deterministic order.
+    """Load every core suite that exists, in deterministic order.
 
-    A scaffolded project ships a subset of the seven suites; absent files are
-    skipped so ``qval run`` (which defaults to ``--suite all``) works on a fresh
-    project without requiring every category to be present.
+    A scaffolded project ships a subset of the seven core suites; absent files
+    are skipped so ``qval run`` (which defaults to ``--suite all``) works on a
+    fresh project without requiring every category to be present. Starter/demo
+    packs (e.g. ``support_bot_starter``) are excluded from ``all`` and run
+    explicitly by name.
     """
     base = test_cases_dir()
     cases: list[dict] = []
-    for suite in ALL_SUITES:
+    for suite in DEFAULT_SUITES:
         if (base / SUITE_FILE_MAP[suite]).is_file():
             cases.extend(load_test_suite(suite))
     return cases
