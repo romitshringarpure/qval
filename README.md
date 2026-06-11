@@ -195,6 +195,26 @@ qval run --mock  # run the native eval suite offline against the mock provider
 > `qval init`'d project in an arbitrary empty directory is scaffolded but not yet
 > runnable end-to-end; project-aware path resolution is a planned follow-up.
 
+## qval ui
+
+`qval ui` starts a local-first web console for browsing suites, launching mock,
+provider, or HTTP-adapter runs, polling progress, and inspecting canonical
+findings. Flask is optional:
+
+```bash
+pip install -e ".[ui]"
+qval ui
+qval ui --port 9000
+```
+
+The server binds to `127.0.0.1` only and does not enable CORS. API keys are read
+from environment variables by the existing providers; the UI API rejects request
+bodies that contain an `api_key` field.
+
+Screenshot placeholder:
+
+![qval ui screenshot placeholder](docs/images/qval-ui-placeholder.png)
+
 ## Commands
 
 | Command | Status |
@@ -202,6 +222,7 @@ qval run --mock  # run the native eval suite offline against the mock provider
 | `qval init` | scaffold a project (qval.yaml, policy.yaml, suites/) |
 | `qval doctor` | validate environment + config |
 | `qval run` | run the native eval suite (provider: mock / openai / http target adapter, F-11) |
+| `qval ui` | local web console for suite browsing, run launch, progress, and findings detail |
 | `qval import` | import Promptfoo (F-03) or DeepEval (F-09) results into a canonical run.json |
 | `qval gate` | diff vs baseline → GO/CONDITIONAL-GO/NO-GO decision, policy-as-code (F-04, F-06) |
 | `qval map` | map findings to OWASP-LLM / NIST AI RMF controls + coverage matrix (F-07) |

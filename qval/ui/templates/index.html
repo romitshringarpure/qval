@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>qval ui</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="brand-mark">q</div>
+          <div>
+            <div class="brand-title">qval</div>
+            <div class="brand-subtitle">local console</div>
+          </div>
+        </div>
+        <nav class="nav">
+          <button class="nav-button active" data-view="suites" type="button">Suites</button>
+          <button class="nav-button" data-view="runs" type="button">Runs</button>
+          <button class="nav-button" data-view="review" type="button">Review Queue</button>
+          <button class="nav-button" data-view="signoff" type="button">Sign-off</button>
+        </nav>
+        <div class="project-card">
+          <div class="muted-label">Project</div>
+          <div id="project-root" class="project-root"></div>
+        </div>
+      </aside>
+
+      <main class="main">
+        <section id="view-suites" class="view active">
+          <div class="view-header">
+            <div>
+              <h1>Suite Library</h1>
+              <p>Browse test coverage and select suites for a local run.</p>
+            </div>
+            <button id="run-selected" class="primary-button" type="button">Run Selected</button>
+          </div>
+          <div id="suite-list" class="suite-list"></div>
+        </section>
+
+        <section id="view-runs" class="view">
+          <div class="view-header">
+            <div>
+              <h1>Runs</h1>
+              <p>Start evaluations and inspect canonical results.</p>
+            </div>
+            <button id="refresh-runs" class="secondary-button" type="button">Refresh</button>
+          </div>
+
+          <div class="run-layout">
+            <section class="panel">
+              <h2>New Run</h2>
+              <form id="run-form" class="run-form">
+                <div>
+                  <label for="suite-select">Suites</label>
+                  <select id="suite-select" multiple></select>
+                </div>
+
+                <fieldset>
+                  <legend>Target</legend>
+                  <div class="segmented">
+                    <label><input type="radio" name="target-type" value="mock" checked> Mock</label>
+                    <label><input type="radio" name="target-type" value="provider"> Provider</label>
+                    <label><input type="radio" name="target-type" value="http"> HTTP</label>
+                  </div>
+                </fieldset>
+
+                <div id="provider-fields" class="target-fields hidden">
+                  <label for="provider-name">Provider</label>
+                  <input id="provider-name" type="text" value="openai">
+                  <label for="provider-model">Model</label>
+                  <input id="provider-model" type="text" placeholder="gpt-4o-mini">
+                </div>
+
+                <div id="http-fields" class="target-fields hidden">
+                  <label for="http-url">URL</label>
+                  <input id="http-url" type="url" placeholder="https://service.example/chat">
+                  <label for="http-method">Method</label>
+                  <select id="http-method">
+                    <option>POST</option>
+                    <option>GET</option>
+                  </select>
+                  <label for="http-headers">Headers JSON</label>
+                  <textarea id="http-headers" rows="4" placeholder='{"Authorization":"Bearer ${TOKEN}"}'></textarea>
+                  <label for="http-body">Body template</label>
+                  <textarea id="http-body" rows="4">{"input": "{{input}}"}</textarea>
+                  <label for="http-response-path">Response path</label>
+                  <input id="http-response-path" type="text" placeholder="$.message.content">
+                </div>
+
+                <div class="inline-fields">
+                  <label for="run-limit">Limit</label>
+                  <input id="run-limit" type="number" min="1" placeholder="optional">
+                  <label for="run-seed">Seed</label>
+                  <input id="run-seed" type="number" min="1" value="42">
+                </div>
+
+                <button class="primary-button" type="submit">Start Run</button>
+              </form>
+
+              <div id="progress-panel" class="progress-panel hidden">
+                <div class="progress-meta">
+                  <span id="progress-status"></span>
+                  <span id="progress-count"></span>
+                </div>
+                <div class="progress-track">
+                  <div id="progress-bar" class="progress-bar"></div>
+                </div>
+                <div id="progress-case" class="progress-case"></div>
+              </div>
+            </section>
+
+            <section class="panel">
+              <h2>Run History</h2>
+              <div id="run-history" class="run-history"></div>
+            </section>
+          </div>
+
+          <section id="run-detail" class="run-detail hidden"></section>
+        </section>
+
+        <section id="view-review" class="view">
+          <div class="view-header">
+            <div>
+              <h1>Review Queue</h1>
+              <p>Adjudicate NEEDS_REVIEW findings with an auditable decision trail.</p>
+            </div>
+            <button id="refresh-review" class="secondary-button" type="button">Refresh Queue</button>
+          </div>
+
+          <div class="toolbar-row">
+            <label>Run <select id="review-run-select"></select></label>
+            <label>Baseline <select id="review-baseline-select"></select></label>
+            <label>Reviewer <input id="reviewer-name" type="text" placeholder="QA reviewer"></label>
+          </div>
+
+          <div class="review-layout">
+            <section class="panel">
+              <h2>Queue</h2>
+              <div id="review-queue" class="review-queue"></div>
+            </section>
+            <section id="review-detail" class="panel review-detail-pane"></section>
+          </div>
+        </section>
+
+        <section id="view-signoff" class="view">
+          <div class="view-header">
+            <div>
+              <h1>Sign-off</h1>
+              <p>Evaluate release gates, inspect regressions, and export evidence.</p>
+            </div>
+            <button id="evaluate-gate" class="primary-button" type="button">Evaluate Gate</button>
+          </div>
+
+          <div class="toolbar-row">
+            <label>Run <select id="signoff-run-select"></select></label>
+            <label>Baseline <select id="signoff-baseline-select"></select></label>
+          </div>
+
+          <section id="gate-panel" class="run-detail hidden"></section>
+        </section>
+      </main>
+    </div>
+
+    <dialog id="decision-modal" class="decision-modal">
+      <form method="dialog" id="decision-form">
+        <h2 id="decision-title">Decision</h2>
+        <input id="decision-kind" type="hidden">
+        <label for="decision-reviewer">Reviewer</label>
+        <input id="decision-reviewer" type="text" placeholder="QA reviewer">
+        <label for="decision-notes">Notes</label>
+        <textarea id="decision-notes" rows="5"></textarea>
+        <label for="decision-expiry">Waiver expiry</label>
+        <input id="decision-expiry" type="date">
+        <div class="modal-actions">
+          <button class="secondary-button" value="cancel" type="submit">Cancel</button>
+          <button id="submit-decision" class="primary-button" value="default" type="button">Save Decision</button>
+        </div>
+      </form>
+    </dialog>
+
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
+  </body>
+</html>

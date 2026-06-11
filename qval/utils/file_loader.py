@@ -27,9 +27,19 @@ SUITE_FILE_MAP = {
     "safety": "safety_tests.json",
     "robustness": "robustness_tests.json",
     "privacy": "privacy_tests.json",
+    "support_bot_starter": "support_bot_starter_tests.json",
 }
 
 ALL_SUITES = list(SUITE_FILE_MAP.keys())
+DEFAULT_SUITES = [
+    "instruction_following",
+    "bias",
+    "toxicity",
+    "hallucination",
+    "safety",
+    "robustness",
+    "privacy",
+]
 
 
 def load_json(path: Path) -> Any:
@@ -86,7 +96,7 @@ def load_test_suite(suite: str) -> list[dict]:
 def load_all_suites() -> list[dict]:
     """Load every suite, in deterministic order."""
     cases: list[dict] = []
-    for suite in ALL_SUITES:
+    for suite in DEFAULT_SUITES:
         cases.extend(load_test_suite(suite))
     return cases
 

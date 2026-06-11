@@ -31,22 +31,28 @@ ScorerFn = Callable[[TestCase, str, Optional[str]], dict]
 class TestRunner:
     def __init__(self, run_id: str, client: ModelClient,
                  scorer_for: Callable[[str], ScorerFn],
-                 risk_matrix: dict, log_fn: Callable[[str], None] | None = None):
+                 risk_matrix: dict, log_fn: Callable[[str], None] | None = None,
+                 progress_fn: Callable[[int, int, str | None], None] | None = None):
         self.run_id = run_id
         self.client = client
         self.scorer_for = scorer_for
         self.risk_matrix = risk_matrix
         self.log = log_fn or (lambda _msg: None)
+        self.progress = progress_fn or (lambda _completed, _total, _current: None)
 
     def run(self, cases: list[TestCase], suite_label: str) -> tuple[list[TestResult], RunSummary]:
         started_at = now_utc_iso()
         results: list[TestResult] = []
+        total = len(cases)
 
-        for case in cases:
+        self.progress(0, total, cases[0].id if cases else None)
+        for index, case in enumerate(cases, start=1):
+            self.progress(index - 1, total, case.id)
             self.log(f"[{case.id}] {case.name} ({case.risk_level})")
             result = self._run_one(case)
             results.append(result)
             self.log(f"    -> {result.status} (score={result.score})")
+            self.progress(index, total, None if index == total else cases[index].id)
 
         completed_at = now_utc_iso()
         summary = self._summarize(results, suite_label, started_at, completed_at)

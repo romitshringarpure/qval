@@ -7,14 +7,12 @@ NO-GO -> 1, otherwise 0; input errors -> 2.
 from __future__ import annotations
 
 import argparse
-import dataclasses
-
-from qval.canonical import ALL_SEVERITIES, DECISION_NO_GO
+from qval.canonical import DECISION_NO_GO
 from qval.canonical.io import load_canonical, save_canonical
 from qval.gate import (
-    diff_runs, evaluate, GateThresholds, POLICY_VERSION,
-    load_policy, discover_policy, PolicyError,
+    diff_runs, evaluate, PolicyError,
 )
+from qval.gate.service import resolve_policy
 
 
 def add_parser(subparsers) -> None:
@@ -47,7 +45,12 @@ def add_parser(subparsers) -> None:
 
 def run(args: argparse.Namespace) -> int:
     try:
-        thresholds, policy_version = _resolve_policy(args)
+        thresholds, policy_version, _policy_path = resolve_policy(
+            policy=args.policy,
+            no_policy=args.no_policy,
+            min_pass_rate=args.min_pass_rate,
+            block_severity=args.block_severity,
+        )
     except (ValueError, PolicyError) as e:
         print(f"qval gate: {e}")
         return 2
@@ -69,37 +72,6 @@ def run(args: argparse.Namespace) -> int:
         print(f"\nGated run written to {args.out}")
 
     return 1 if decision.verdict == DECISION_NO_GO else 0
-
-
-def _resolve_policy(args: argparse.Namespace) -> tuple[GateThresholds, str]:
-    """Build the thresholds + provenance stamp from policy file and CLI flags.
-
-    Precedence: built-in defaults < policy file < explicit CLI flags. A policy
-    comes from ``--policy`` (explicit), or auto-discovery unless ``--no-policy``.
-    """
-    thresholds = GateThresholds()
-    policy_version = POLICY_VERSION
-
-    if not args.no_policy:
-        policy_path = args.policy or discover_policy()
-        if policy_path is not None:
-            loaded = load_policy(policy_path)
-            thresholds, policy_version = loaded.thresholds, loaded.version
-
-    overrides: dict = {}
-    if args.block_severity is not None:
-        sevs = frozenset(s.strip() for s in args.block_severity.split(",") if s.strip())
-        bad = sevs - set(ALL_SEVERITIES)
-        if bad:
-            raise ValueError(f"invalid --block-severity {sorted(bad)}; "
-                             f"choose from {ALL_SEVERITIES}")
-        overrides["block_new_severities"] = sevs
-    if args.min_pass_rate is not None:
-        overrides["min_pass_rate"] = args.min_pass_rate
-
-    if overrides:
-        thresholds = dataclasses.replace(thresholds, **overrides)
-    return thresholds, policy_version
 
 
 def _print_decision(decision) -> None:

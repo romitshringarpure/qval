@@ -17,6 +17,14 @@ outputs_dir: outputs    # where runs, reports, evidence are written
 #   timeout_seconds: 30
 #   retry: {max_attempts: 3, initial_backoff_seconds: 1, backoff_multiplier: 2}
 
+# Demo support bot target (start it with `qval demo`):
+# target:
+#   url: http://127.0.0.1:8651/chat
+#   method: POST
+#   headers: {}
+#   body_template: '{"message": "{{input}}"}'
+#   response_path: $.reply
+
 # LLM judge-assist (F-12): pre-triage borderline needs_review findings. The
 # judge annotates a suggestion + confidence + rationale; the human override
 # always wins. It never runs on the severity_not bucket (critical).
