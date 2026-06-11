@@ -16,7 +16,7 @@ except ModuleNotFoundError as exc:  # pragma: no cover - exercised via command t
 from qval.engine.run_service import execute_run, list_run_history, load_run
 from qval.engine.suite_service import list_suite_library
 from qval.gate.service import gate_payload
-from qval.project import resolve_project
+from qval.project import get_active_project
 from qval.reports.export_service import export_run
 from qval.review.service import record_decision, review_queue_payload
 from qval.review.workflow import ReviewError
@@ -55,7 +55,15 @@ def create_app() -> Flask:
 
     @app.get("/api/project")
     def project():
-        return jsonify(resolve_project().to_dict())
+        proj = get_active_project()
+        return jsonify({
+            "root": str(proj.root),
+            "paths": {
+                "config": str(proj.config_dir),
+                "suites": str(proj.test_cases_dir),
+                "outputs": str(proj.outputs_dir),
+            },
+        })
 
     @app.get("/api/suites")
     def suites():

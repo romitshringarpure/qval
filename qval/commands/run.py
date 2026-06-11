@@ -10,7 +10,8 @@ from __future__ import annotations
 import argparse
 
 from qval.engine.run_service import build_client, execute_run, load_cases
-from qval.utils.file_loader import ALL_SUITES, PROJECT_ROOT
+from qval.project import require_project, set_active_project, ProjectNotFoundError
+from qval.utils.file_loader import ALL_SUITES
 
 
 def add_parser(subparsers) -> None:
@@ -69,6 +70,14 @@ def add_parser(subparsers) -> None:
 
 
 def run(args: argparse.Namespace) -> int:
+    # Anchor all path resolution at the discovered project root (U-00).
+    try:
+        project = require_project()
+    except ProjectNotFoundError as exc:
+        print(exc)
+        return 2
+    set_active_project(project)
+
     target_config = _target_config_from_args(args)
     execution = execute_run(
         suite=args.suite,
@@ -96,7 +105,7 @@ def run(args: argparse.Namespace) -> int:
     print(f"Pass rate:     {summary.pass_rate:.1%}   "
           f"(severity-weighted: {summary.weighted_pass_rate:.1%})")
     print(f"HTML report:   {summary.report_path}")
-    print(f"MD report:     {md_path.relative_to(PROJECT_ROOT)}")
+    print(f"MD report:     {md_path.relative_to(project.root)}")
     print(f"Evidence:      {summary.evidence_dir}/")
     print("=" * 64)
 

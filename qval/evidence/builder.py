@@ -33,7 +33,7 @@ from pathlib import Path
 
 from qval.canonical import Artifact, EvidencePack, CanonicalRun
 from qval.reports.canonical_report import render_markdown, render_html
-from qval.utils.file_loader import OUTPUTS_DIR
+from qval.utils.file_loader import outputs_dir
 from qval.utils.time_utils import now_utc_iso
 
 MODE_REGULATED = "regulated"
@@ -73,7 +73,7 @@ def build_pack(run: CanonicalRun, out_dir=None, *, mode: str = MODE_INTERNAL,
             "(QVAL_SIGNING_KEY) or use --mode internal"
         )
 
-    out_dir = Path(out_dir) if out_dir else OUTPUTS_DIR / "evidence" / run.run_id
+    out_dir = Path(out_dir) if out_dir else outputs_dir() / "evidence" / run.run_id
     out_dir.mkdir(parents=True, exist_ok=True)
 
     contents = _render_contents(run)

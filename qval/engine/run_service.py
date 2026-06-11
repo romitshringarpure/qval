@@ -13,6 +13,7 @@ from qval.canonical.schema import CanonicalRun
 from qval.controls import load_catalog, map_controls
 from qval.controls.catalog import ControlCatalogError
 from qval.engine.model_client import ModelClient, OpenAIClient, MockClient
+from qval.project import get_active_project
 from qval.engine.pricing import load_pricing
 from qval.engine.response_logger import ResponseLogger
 from qval.engine.schemas import DetectorResult, TestCase, TestResult, RunSummary
@@ -21,9 +22,8 @@ from qval.reports.report_generator import generate_reports
 from qval.scorers.base_scorer import get_scorer
 from qval.utils.file_loader import (
     ALL_SUITES,
-    OUTPUTS_DIR,
-    PROJECT_ROOT,
     DEFAULT_SUITES,
+    outputs_dir,
     load_all_suites,
     load_model_config,
     load_risk_matrix,
@@ -180,8 +180,9 @@ def execute_run(*, suites: list[str] | None = None, suite: str | None = None,
     logger.write_manual_review(results)
 
     md_path, html_path = generate_reports(summary, results, risk_matrix, scoring_config)
-    summary.report_path = str(html_path.relative_to(PROJECT_ROOT))
-    summary.evidence_dir = str((OUTPUTS_DIR / "evidence" / run_id).relative_to(PROJECT_ROOT))
+    project_root = get_active_project().root
+    summary.report_path = str(html_path.relative_to(project_root))
+    summary.evidence_dir = str((outputs_dir() / "evidence" / run_id).relative_to(project_root))
     logger.write_summary(summary)
     logger.write_run_log(log_lines)
 
@@ -201,13 +202,13 @@ def execute_run(*, suites: list[str] | None = None, suite: str | None = None,
 
 
 def canonical_run_path(run_id: str) -> Path:
-    return OUTPUTS_DIR / "evidence" / run_id / "run.json"
+    return outputs_dir() / "evidence" / run_id / "run.json"
 
 
 def list_run_history() -> list[dict[str, Any]]:
     """Read run summaries from outputs/evidence."""
 
-    evidence_root = OUTPUTS_DIR / "evidence"
+    evidence_root = outputs_dir() / "evidence"
     if not evidence_root.exists():
         return []
 
@@ -230,8 +231,8 @@ def load_run(run_id: str) -> CanonicalRun:
     if path.is_file():
         return load_canonical(path)
 
-    summary_path = OUTPUTS_DIR / "evidence" / run_id / "summary.json"
-    results_path = OUTPUTS_DIR / "results" / f"{run_id}.json"
+    summary_path = outputs_dir() / "evidence" / run_id / "summary.json"
+    results_path = outputs_dir() / "results" / f"{run_id}.json"
     try:
         summary_raw = json.loads(summary_path.read_text(encoding="utf-8"))
         results_raw = json.loads(results_path.read_text(encoding="utf-8"))

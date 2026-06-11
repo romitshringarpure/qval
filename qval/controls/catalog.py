@@ -18,9 +18,11 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from qval.canonical import Control
-from qval.utils.file_loader import CONFIG_DIR
+from qval.utils.file_loader import config_dir
 
-DEFAULT_CATALOG_PATH = CONFIG_DIR / "controls.json"
+def default_catalog_path():
+    """Resolved at call time so project-aware paths (U-00) are honoured."""
+    return config_dir() / "controls.json"
 
 
 class ControlCatalogError(Exception):
@@ -47,7 +49,7 @@ class Catalog:
 
 def load_catalog(path=None) -> Catalog:
     """Load and validate a control catalog (default: ``config/controls.json``)."""
-    path = Path(path) if path is not None else DEFAULT_CATALOG_PATH
+    path = Path(path) if path is not None else default_catalog_path()
     try:
         raw = json.loads(path.read_text(encoding="utf-8"))
     except FileNotFoundError:

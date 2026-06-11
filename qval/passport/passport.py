@@ -21,7 +21,7 @@ from qval.canonical import (
     SEVERITY_CRITICAL,
 )
 from qval.reports.canonical_report import render_markdown, render_html
-from qval.utils.file_loader import OUTPUTS_DIR
+from qval.utils.file_loader import outputs_dir
 from qval.utils.time_utils import now_utc_iso
 from . import signing
 from .manifest import build_manifest, canonical_bytes, sha256_hex
@@ -65,7 +65,7 @@ def build_passport(run: CanonicalRun, *, private_pem: bytes, approver: str = "",
         "disclaimer": DISCLAIMER,
     }
 
-    out_dir = Path(out_dir) if out_dir else OUTPUTS_DIR / "passports" / core["passport_id"]
+    out_dir = Path(out_dir) if out_dir else outputs_dir() / "passports" / core["passport_id"]
     out_dir.mkdir(parents=True, exist_ok=True)
     for path, data in artifacts:
         (out_dir / path).write_bytes(data)

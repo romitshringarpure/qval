@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>qval — Enterprise · Checklist &amp; Web App Decision</title>
+<style>
+  :root{--fg:#0f172a;--muted:#475569;--border:#e2e8f0;--bg:#f8fafc;--card:#fff;--accent:#2563eb;--pass:#16a34a;--paid-bg:#ede9fe;--paid-fg:#6d28d9;--later-bg:#e2e8f0;--later-fg:#475569;}
+  *{box-sizing:border-box;}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--fg);background:var(--bg);margin:0;padding:32px;line-height:1.5;}
+  .wrap{max-width:880px;margin:0 auto;}
+  h1{font-size:30px;margin:0 0 4px;}
+  h2{font-size:20px;margin:28px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--border);}
+  .subtitle{color:var(--muted);margin-bottom:8px;font-size:16px;}
+  .meta{color:var(--muted);font-size:13px;margin-bottom:16px;}
+  .meta a{color:var(--accent);text-decoration:none;font-weight:600;}
+  .decision{border:2px solid var(--accent);border-radius:10px;padding:16px 18px;margin:16px 0;background:#eff6ff;}
+  .decision .t{font-size:18px;font-weight:700;color:#1e3a8a;}
+  .decision .d{margin-top:6px;color:#1e293b;font-size:14px;}
+  .decision ul{margin:8px 0 0;padding-left:18px;}
+  .decision li{margin:5px 0;}
+  .warn{border:2px solid #b91c1c;border-radius:10px;padding:12px 16px;margin:16px 0;background:#fef2f2;color:#7f1d1d;font-size:14px;}
+  ul.check{list-style:none;padding-left:0;margin:0;}
+  ul.check li{display:flex;align-items:flex-start;gap:11px;padding:10px 13px;margin-bottom:7px;background:var(--card);border:1px solid var(--border);border-radius:8px;}
+  ul.check li input{margin-top:3px;width:18px;height:18px;flex:none;accent-color:var(--paid-fg);cursor:pointer;}
+  .fname{font-weight:600;}
+  .fname .id{font-family:ui-monospace,Menlo,monospace;}
+  .why{color:var(--muted);font-size:13px;margin-top:2px;}
+  .pill{display:inline-block;padding:1px 8px;border-radius:999px;font-size:11px;font-weight:600;margin-left:6px;vertical-align:middle;}
+  .pill-paid{background:var(--paid-bg);color:var(--paid-fg);}
+  .pill-later{background:var(--later-bg);color:var(--later-fg);}
+  table{border-collapse:collapse;width:100%;margin:10px 0;font-size:13.5px;}
+  th,td{border:1px solid var(--border);padding:7px 9px;text-align:left;vertical-align:top;}
+  th{background:#f1f5f9;}
+  td.paid{color:var(--paid-fg);font-weight:600;}
+  td.oss{color:var(--pass);font-weight:600;}
+  code{font-family:ui-monospace,Menlo,monospace;font-size:0.9em;background:#f1f5f9;padding:1px 4px;border-radius:4px;}
+  footer{color:var(--muted);font-size:12px;margin-top:32px;padding-top:14px;border-top:1px solid var(--border);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>qval — Enterprise / Evidence Room</h1>
+  <div class="subtitle"><strong>Paid tier.</strong> Collaboration, hosting, multi-team governance. The artifact + verifier stay free — see the OSS core.</div>
+  <div class="meta">OSS core &rarr; <a href="features-oss.html">features-oss.html</a> &middot; Master: docs/FEATURES-ENTERPRISE.md &middot; Internal — gitignored &middot; Updated 2026-06-06</div>
+
+  <div class="decision">
+    <div class="t">🕒 The web app (hosted Evidence Room): build it early? — <span style="color:#b91c1c;">No. Post-PMF.</span></div>
+    <div class="d">
+      The wedge is the OSS artifact + <code>verify</code> (CLI + static HTML passport) — that drives adoption and demos in 10 seconds with no server. The hosted web app is the <em>monetization</em> layer, not the wedge.
+      <ul>
+        <li><strong>Why wait:</strong> multi-tenant hosting + RBAC/SSO/retention before you know what reviewers need = burning runway pre-PMF. Giskard Hub and Promptfoo enterprise already ship dashboards — competing on "dashboard" early = a weaker clone.</li>
+        <li><strong>What covers MVP instead:</strong> the static HTML passport opens in any browser — reviewers read findings + decision with zero infra.</li>
+        <li><strong>Earliest defensible web step (optional, OSS):</strong> a thin <em>local</em> review viewer (<code>qval serve</code>) reading local files — nicer than static HTML, still no hosting. Must not jump ahead of the flagship.</li>
+        <li><strong>Trigger to start the hosted app:</strong> real OSS pull — stars, repeat passport creation, teams asking for shared history &amp; sign-off.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="warn"><strong>Do not build before OSS PMF.</strong> No hosted product until the OSS core shows traction.</div>
+
+  <h2>Paid checklist (all gated on OSS PMF)</h2>
+  <ul class="check">
+    <li><input type="checkbox"><div><span class="fname"><span class="id">F-15</span> · Hosted Evidence Room (the web app)</span> <span class="pill pill-paid">Paid</span> <span class="pill pill-later">Post-PMF</span><div class="why">Reviewer workflow + sign-off, release history &amp; trend, RBAC + SSO, retention + audit trail, Jira/ServiceNow push, self-host license, support. Was old-scheme F-14 SaaS.</div></div></li>
+    <li><input type="checkbox"><div><span class="fname"><span class="id">F-14</span> · Public transparency log</span> <span class="pill pill-paid">Paid</span> <span class="pill pill-later">Moat</span><div class="why">Hosted append-only registry of passports. Verification then needs no issuer trust — even we can't backdate.</div></div></li>
+    <li><input type="checkbox"><div><span class="fname"><span class="id">F-10</span> · Collaborative review workflow</span> <span class="pill pill-paid">Paid</span> <span class="pill pill-later">Post-PMF</span><div class="why">Multi-user, audit-trailed review: queue, assignment, notes, approve/reject/waive. <strong>Single-user CLI shipped OSS</strong> (<code>qval review</code>); the multi-user/RBAC surface is the still-deferred paid layer.</div></div></li>
+  </ul>
+
+  <h2>Capability map — OSS vs paid</h2>
+  <table>
+    <tr><th>Capability</th><th>Tier</th></tr>
+    <tr><td>Exportable evidence packs</td><td class="oss">OSS (F-08)</td></tr>
+    <tr><td>API access</td><td>OSS core + paid hosted API</td></tr>
+    <tr><td>Self-hosted deployment</td><td class="paid">Paid (licensed)</td></tr>
+    <tr><td>Audit trail</td><td class="paid">Paid (F-15)</td></tr>
+    <tr><td>Retention policy</td><td class="paid">Paid (F-15)</td></tr>
+    <tr><td>RBAC</td><td class="paid">Paid (F-15)</td></tr>
+    <tr><td>SSO (SAML / OIDC)</td><td class="paid">Paid (F-15)</td></tr>
+    <tr><td>Jira / ServiceNow</td><td class="paid">Paid (F-15)</td></tr>
+    <tr><td>Reviewer workflow (multi-user)</td><td class="paid">Paid (F-15 / F-10)</td></tr>
+    <tr><td>Transparency log (hosted)</td><td class="paid">Paid (F-14)</td></tr>
+    <tr><td>Enterprise support / SLA</td><td class="paid">Paid</td></tr>
+  </table>
+
+  <h2>Build sequence (only after OSS PMF)</h2>
+  <ul class="check">
+    <li><input type="checkbox"><div><span class="fname">1 · Exportable packs + API</span><div class="why">Make the artifact useful (partly OSS already).</div></div></li>
+    <li><input type="checkbox"><div><span class="fname">2 · Self-host + audit trail + retention</span><div class="why">The regulated-buyer unlock.</div></div></li>
+    <li><input type="checkbox"><div><span class="fname">3 · RBAC + SSO</span><div class="why">Multi-team.</div></div></li>
+    <li><input type="checkbox"><div><span class="fname">4 · Jira / ServiceNow</span><div class="why">Workflow fit.</div></div></li>
+    <li><input type="checkbox"><div><span class="fname">5 · Transparency log</span><div class="why">The moat.</div></div></li>
+  </ul>
+
+  <div class="subtitle" style="margin-top:16px;"><strong>Pricing hypothesis:</strong> per-team / per-seat hosted Evidence Room; self-host license for regulated buyers. Land via the OSS engineer → expand to the governance / compliance team.</div>
+  <footer>qval enterprise roadmap · internal · gitignored · mirrors docs/FEATURES-ENTERPRISE.md</footer>
+</div>
+</body>
+</html>

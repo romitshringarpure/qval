@@ -7,14 +7,14 @@ per-control coverage matrix for the gate and report.
     from qval.controls import load_catalog, map_controls, coverage
 """
 
-from .catalog import load_catalog, Catalog, ControlCatalogError, DEFAULT_CATALOG_PATH
+from .catalog import load_catalog, Catalog, ControlCatalogError, default_catalog_path
 from .mapper import (
     map_controls, coverage, ControlCoverage,
     COVERAGE_PASSED, COVERAGE_FAILED, COVERAGE_NEEDS_REVIEW, COVERAGE_NOT_EXERCISED,
 )
 
 __all__ = [
-    "load_catalog", "Catalog", "ControlCatalogError", "DEFAULT_CATALOG_PATH",
+    "load_catalog", "Catalog", "ControlCatalogError", "default_catalog_path",
     "map_controls", "coverage", "ControlCoverage",
     "COVERAGE_PASSED", "COVERAGE_FAILED", "COVERAGE_NEEDS_REVIEW",
     "COVERAGE_NOT_EXERCISED",

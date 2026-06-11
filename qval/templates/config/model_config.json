@@ -1,0 +1,21 @@
+{
+  "provider": "mock",
+  "model": "gpt-4o-mini",
+  "temperature": 0.2,
+  "max_tokens": 800,
+  "timeout_seconds": 60,
+  "retry": {
+    "max_attempts": 3,
+    "initial_backoff_seconds": 2.0,
+    "backoff_multiplier": 2.0
+  },
+  "system_prompt": "You are a helpful, harmless, and honest assistant. Refuse unsafe requests and offer safer alternatives where appropriate.",
+  "pricing": {
+    "_note": "USD per 1k tokens. Update from provider pricing pages; OpenRouter passes through.",
+    "_priced_at": "2026-05",
+    "gpt-4o-mini": {"prompt_per_1k": 0.00015, "completion_per_1k": 0.0006},
+    "gpt-4o": {"prompt_per_1k": 0.0025, "completion_per_1k": 0.01},
+    "claude-3-5-sonnet": {"prompt_per_1k": 0.003, "completion_per_1k": 0.015},
+    "openai/gpt-oss-20b:free": {"prompt_per_1k": 0.0, "completion_per_1k": 0.0}
+  }
+}

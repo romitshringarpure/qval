@@ -24,6 +24,14 @@ def add_parser(subparsers) -> None:
 
 
 def run(args: argparse.Namespace) -> int:
+    # Anchor all path resolution at the discovered project root (U-00) so the
+    # console serves the user's project, not the repo checkout fallback.
+    from qval.project import find_project_root, set_active_project
+
+    project = find_project_root()
+    if project is not None:
+        set_active_project(project)
+
     try:
         create_app = _load_create_app()
     except RuntimeError as exc:
@@ -31,6 +39,7 @@ def run(args: argparse.Namespace) -> int:
         return 1
 
     app = create_app()
+    print(f"qval console: http://127.0.0.1:{args.port}  (Ctrl-C to stop)")
     app.run(host="127.0.0.1", port=args.port, debug=False)
     return 0
 
