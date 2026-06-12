@@ -226,6 +226,7 @@ Screenshot placeholder:
 | `qval run` | run the native eval suite (provider: mock / openai / http target adapter, F-11) |
 | `qval ui` | local web console for suite browsing, run launch, progress, and findings detail |
 | `qval import` | import Promptfoo (F-03) or DeepEval (F-09) results into a canonical run.json |
+| `qval export` | export a native suite to a runnable Promptfoo/DeepEval config + fidelity report (F-17) |
 | `qval gate` | diff vs baseline → GO/CONDITIONAL-GO/NO-GO decision, policy-as-code (F-04, F-06) |
 | `qval map` | map findings to OWASP-LLM / NIST AI RMF controls + coverage matrix (F-07) |
 | `qval report` | shareable HTML/Markdown release report (F-05) |
