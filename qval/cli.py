@@ -11,6 +11,7 @@ from qval.commands import init as init_cmd
 from qval.commands import doctor as doctor_cmd
 from qval.commands import run as run_cmd
 from qval.commands import import_cmd
+from qval.commands import export_cmd
 from qval.commands import gate_cmd
 from qval.commands import map_cmd
 from qval.commands import report_cmd
@@ -35,6 +36,7 @@ def build_parser() -> argparse.ArgumentParser:
     doctor_cmd.add_parser(subparsers)
     run_cmd.add_parser(subparsers)
     import_cmd.add_parser(subparsers)
+    export_cmd.add_parser(subparsers)
     gate_cmd.add_parser(subparsers)
     map_cmd.add_parser(subparsers)
     report_cmd.add_parser(subparsers)

@@ -67,3 +67,12 @@ These tools cohabitate well. A typical mature LLM-evaluation program might use:
 - **TruLens / Langfuse** to monitor production traces.
 
 The point of this project is to make sure the QA discipline gets a first-class home in that mix.
+
+### Round-trip interoperability
+
+Coexistence runs in both directions, so this framework can sit at the center as the **system of record** for test intent rather than a silo:
+
+- **Results in** — `qval import promptfoo|deepeval <results>` normalizes another tool's run into the canonical schema (F-03/F-09), where the gate, report, and evidence pack consume it.
+- **Suites out** — `qval export promptfoo|deepeval --suite <name>` renders a curated qval suite into that tool's runnable config (F-17): each case becomes a Promptfoo test (`vars.input` + `llm-rubric`/deterministic asserts) or a DeepEval `LLMTestCase` + `GEval` pytest. A fidelity report states exactly which fields (e.g. `risk_level`, `manual_review_required`, detectors without an equivalent) translated cleanly vs degraded, so the export is never silently lossy.
+
+Author your regression suite once in qval's versioned JSON, run it under whichever engine a given team already operates, and re-import the results for governance — without re-authoring the tests per tool.
